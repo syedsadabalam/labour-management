@@ -29,9 +29,12 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(manager_bp)
 
+    from flask import redirect
+
     @app.route('/')
     def index():
-        return "Labour Management - go to /auth/login"
+        return redirect('/auth/login')
+
 
     return app
 
