@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Attendance Report{% endblock %}
+{% block page_title %}Attendance Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- FILTERS -->
+  <form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-3 align-items-end">
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Site</label>
+        <select name="site_id" class="form-select" required>
+          <option value="">Select</option>
+          {% for s in sites %}
+            <option value="{{ s.id }}" {% if filters.site_id == s.id %}selected{% endif %}>
+              {{ s.site_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Start Date</label>
+        <input type="date" name="start_date" class="form-control"
+               value="{{ filters.start_date }}">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">End Date</label>
+        <input type="date" name="end_date" class="form-control"
+               value="{{ filters.end_date }}">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Day Shift</label>
+        <select name="day_shift" class="form-select">
+          <option value="all">All</option>
+          <option value="present" {% if filters.day_shift=='present' %}selected{% endif %}>Present</option>
+          <option value="absent" {% if filters.day_shift=='absent' %}selected{% endif %}>Absent</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Night Shift</label>
+        <select name="night_shift" class="form-select">
+          <option value="all">All</option>
+          <option value="present" {% if filters.night_shift=='present' %}selected{% endif %}>Present</option>
+          <option value="absent" {% if filters.night_shift=='absent' %}selected{% endif %}>Absent</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Worked Type</label>
+        <select name="worked_type" class="form-select">
+          <option value="any">Any</option>
+          <option value="any_worked" {% if filters.worked_type=='any_worked' %}selected{% endif %}>
+            Worked (Day or Night)
+          </option>
+          <option value="day" {% if filters.worked_type=='day' %}selected{% endif %}>Day Worked</option>
+          <option value="night" {% if filters.worked_type=='night' %}selected{% endif %}>Night Worked</option>
+          <option value="both" {% if filters.worked_type=='both' %}selected{% endif %}>Both Worked</option>
+        </select>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button class="btn btn-primary">
+          <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {% if not filters.site_id %}
+    <div class="alert alert-info">
+      Please select a site and date range to view attendance.
+    </div>
+  {% endif %}
+
+  <!-- KPIs -->
+  {% if filters.site_id %}
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Day Present</div>
+          <h4 class="text-success">{{ kpis.day_present }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Night Present</div>
+          <h4 class="text-info">{{ kpis.night_present }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Unique Labours</div>
+          <h4>{{ kpis.unique_labours }}</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- TABLE -->
+  {% if records %}
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Labour</th>
+            <th>Phone</th>
+            <th>Day Shift</th>
+            <th>Night Shift</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.date.strftime('%d-%m-%Y') }}</td>
+            <td>{{ r.labour.name }}</td>
+            <td>{{ r.labour.phone }}</td>
+            <td>
+              {% if r.day_shift_flag %}
+                <span class="badge bg-success">Present</span>
+              {% else %}
+                <span class="badge bg-danger">Absent</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.night_shift_flag %}
+                <span class="badge bg-success">Present</span>
+              {% else %}
+                <span class="badge bg-danger">Absent</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% elif filters.site_id %}
+    <div class="text-center text-muted py-4">
+      No records found for selected filters.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

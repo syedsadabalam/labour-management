@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Edit Payment{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col-8">
+      <h4 class="mb-0">Edit Payment</h4>
+      <p class="text-muted small">Update advance / payment entry</p>
+    </div>
+    <div class="col-4 text-end">
+      <a href="{{ url_for('admin_bp.admin_payments') }}"
+         class="btn btn-sm btn-outline-secondary">
+        Back to Payments
+      </a>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+
+        <div class="row">
+          <!-- Labour -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Labour</label>
+            <!-- Labour (readonly) -->
+            <select class="form-control" disabled>
+              <option>{{ payment.labour.name }}</option>
+            </select>
+            <input type="hidden" name="labour_id" value="{{ payment.labour_id }}">
+          </div>
+
+          <!-- Site -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Site</label>
+            <!-- Site (readonly) -->
+            <select class="form-control" disabled>
+              <option>{{ payment.site.site_name }}</option>
+            </select>
+            <input type="hidden" name="site_id" value="{{ payment.site_id }}">
+
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Date -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Date</label>
+            <input type="date"
+                   name="date"
+                   class="form-control"
+                   value="{{ payment.date }}">
+          </div>
+
+          <!-- Advance -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Advance Amount</label>
+            <input type="number"
+                   name="advance"
+                   class="form-control" 
+                   step="0.01"
+                   value="{{ payment.advance or 0 }}">
+          </div>
+
+          <!-- Total Paid -->
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Total Paid</label>
+            <input type="number" name="total_paid" class="form-control" value="{{ payment.total_paid or 0 }}" readonly>
+          </div>
+        </div>
+
+        <!-- Note -->
+        <div class="mb-3">
+          <label class="form-label">Note</label>
+          <textarea name="note"
+                    class="form-control"
+                    rows="3">{{ payment.note or '' }}</textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">
+            Save Changes
+          </button>
+          <a href="{{ url_for('admin_bp.admin_payments') }}"
+             class="btn btn-outline-secondary ms-2">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

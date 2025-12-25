@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Edit Site{% endblock %}
+{% block page_title %}Edit Site{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-semibold">
+      <i class="fa-solid fa-building me-2"></i>Edit Site
+    </h5>
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-outline-secondary">
+      Back to Sites
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+
+      <form method="POST">
+
+        <!-- SITE NAME -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Site Name</label>
+          <input
+            type="text"
+            name="site_name"
+            class="form-control"
+            value="{{ site.site_name }}"
+            required
+          >
+        </div>
+
+        <!-- LOCATION -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Location</label>
+          <input
+            type="text"
+            name="location"
+            class="form-control"
+            value="{{ site.location or '' }}"
+          >
+        </div>
+
+        <!-- ASSIGN MANAGER -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Assign Manager</label>
+          <select name="manager_id" class="form-select">
+            <option value="">-- Not Assigned --</option>
+            {% for manager in managers %}
+              <option value="{{ manager.id }}"
+                {% if site.manager_id == manager.id %}selected{% endif %}
+              >
+                {{ manager.username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-primary px-4">
+            Save Changes
+          </button>
+          <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-outline-secondary ms-2">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Add Advance{% endblock %}
+{% block page_title %}Add Advance{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white fw-semibold">
+      Add Advance Payment
+    </div>
+
+    <div class="card-body">
+      <form method="post">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Labour</label>
+        
+          <input type="text"
+                id="labourSearch"
+                class="form-control mb-2"
+                placeholder="Search labour by name or phone">
+
+          <select name="labour_id"
+                  id="labourSelect"
+                  class="form-select"
+                  size="6"
+                  required>
+            {% for labour in labours %}
+              <option value="{{ labour.id }}">
+                {{ labour.name }}{% if labour.phone %} ({{ labour.phone }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        </div>
+
+        <div class="mb-3">
+          <input type="date" name="date" class="form-control" value="{{ today }}" max="{{ today }}" required>
+
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Advance Amount</label>
+          <input type="number" name="advance" class="form-control" min="0" step="0.01" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Note</label>
+          <textarea name="note" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="text-end">
+          <button class="btn btn-success">
+            <i class="fa-solid fa-floppy-disk"></i> Save
+          </button>
+          <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-secondary ms-2">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+<script>
+  const searchInput = document.getElementById('labourSearch');
+  const select = document.getElementById('labourSelect');
+
+  searchInput.addEventListener('keyup', function () {
+    const q = this.value.toLowerCase();
+    for (const option of select.options) {
+      option.style.display = option.text.toLowerCase().includes(q)
+        ? ''
+        : 'none';
+    }
+  });
+</script>
+
+{% endblock %}

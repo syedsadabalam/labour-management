@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Sites{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0">Sites</h4>
+      <p class="text-muted small">All project sites</p>
+    </div>
+  </div>
+  <div class="text-end">
+    <a href="{{ url_for('admin_bp.admin_add_site') }}" class="btn btn-primary btn-sm">+ Add Site</a>
+    <a href="{{ url_for('admin_bp.admin_dashboard') }}"
+       class="btn btn-sm btn-outline-secondary">
+      Back to Dashboard
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+
+      {% if sites %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width:50px">#</th>
+              <th>Site Name</th>
+              <th>Location</th>
+              <th>Manager</th>
+              <th>Status</th>
+              <th style="width:180px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            {% for site in sites %}
+            <tr>
+              <td>{{ loop.index }}</td>
+
+              <td>{{ site.site_name or '-' }}</td>
+
+              <td>{{ site.location or '-' }}</td>
+
+              <!-- ✅ FIXED MANAGER DISPLAY -->
+              <td>
+                {% set managers = site.users | selectattr('role', 'equalto', 'manager') | list %}
+                
+                {% if managers %}
+                  {% for manager in managers %}
+                    <span>
+                      {{ manager.username }}
+                    </span>
+                  {% endfor %}
+                {% else %}
+                  <span class="text-muted">Not Assigned</span>
+                {% endif %}
+              </td>
+
+
+              <!-- STATUS -->
+              <td>
+                {% if site.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+
+              <!-- ACTIONS -->
+              <td>
+                <a href="{{ url_for('admin_bp.admin_edit_site', site_id=site.id) }}"
+                   class="btn btn-sm btn-outline-primary">
+                  Edit
+                </a>
+
+                <!-- ACTIVATE / DEACTIVATE -->
+                <form action="{{ url_for('admin_bp.toggle_site_status', site_id=site.id) }}"
+                      method="post"
+                      style="display:inline;">
+                  {% if site.is_active %}
+                    <button class="btn btn-sm btn-outline-warning"
+                            onclick="return confirm('Deactivate this site?')">
+                      Deactivate
+                    </button>
+                  {% else %}
+                    <button class="btn btn-sm btn-outline-success"
+                            onclick="return confirm('Activate this site?')">
+                      Activate
+                    </button>
+                  {% endif %}
+                </form>
+              </td>
+
+            </tr>
+            {% endfor %}
+
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">
+          No sites found.
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

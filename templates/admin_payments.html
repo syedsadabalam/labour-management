@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Payments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col-8">
+      <h4 class="mb-0">Payments</h4>
+      <p class="text-muted small">Advance & payment history</p>
+    </div>
+    <div class="col-4 text-end">
+      <a href="{{ url_for('admin_bp.admin_add_payment') }}"
+         class="btn btn-sm btn-success">
+        + Add Payment
+      </a>
+      <a href="{{ url_for('admin_bp.admin_dashboard') }}"
+         class="btn btn-sm btn-outline-secondary ms-2">
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      {% if payments %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Labour</th>
+              <th>Site</th>
+              <th>Advance</th>
+              <th>Total Paid</th>
+              <th>Note</th>
+              <th style="width:180px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+            <tr>
+              <td>{{ loop.index }}</td>
+
+              <td>{{ payment.date or '-' }}</td>
+
+              <td>
+                {{ payment.labour.name if payment.labour else '-' }}
+              </td>
+
+              <td>
+                {{ payment.site.site_name if payment.site else '-' }}
+              </td>
+
+              <td>
+                ₹{{ "%.2f"|format(payment.advance or 0) }}
+              </td>
+
+              <td>
+                ₹{{ "%.2f"|format(payment.total_paid or 0) }}
+              </td>
+
+              <td>{{ payment.note or '-' }}</td>
+
+             <td>
+                <a href="{{ url_for('admin_bp.admin_edit_payment', payment_id=payment.id) }}"
+                  class="btn btn-sm btn-outline-primary">Edit</a>
+
+                <form action="{{ url_for('admin_bp.delete_payment', payment_id=payment.id) }}"
+                      method="post" style="display:inline;">
+                  <button type="submit"
+                          class="btn btn-sm btn-danger"
+                          onclick="return confirm('Delete this payment?')">
+                    Delete
+                  </button>
+                </form>
+              </td>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">No payments recorded.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

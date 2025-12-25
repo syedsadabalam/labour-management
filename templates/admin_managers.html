@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-bottom fw-semibold d-flex justify-content-between align-items-center">
+    <span>Manage Managers</span>
+    <a href="{{ url_for('admin_bp.admin_add_manager') }}" class="btn btn-sm btn-success">
+      <i class="fa-solid fa-plus"></i> Add New Manager
+    </a>
+
+  </div>
+
+  <div class="card-body p-4">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Assigned Site</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for manager in managers %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ manager.username }}</td>
+            <td>{{ manager.site.site_name if manager.site else '-' }}</td>
+            <td>
+              <a href="{{ url_for('admin_bp.admin_edit_manager', manager_id=manager.id) }}"
+                class="btn btn-sm btn-primary me-1">
+                <i class="fa-solid fa-pen"></i> Edit
+              </a>
+
+              <form action="{{ url_for('admin_bp.delete_manager', manager_id=manager.id) }}"
+                    method="post"
+                    class="d-inline"
+                    onsubmit="return confirm('Delete this manager?');">
+                <button type="submit" class="btn btn-sm btn-danger">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </form>
+            </td>
+
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted">No managers found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Monthly Expenses{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <h4 class="mb-3">Monthly Mess & Canteen Expenses</h4>
+
+  <!-- FILTER -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Select Site</label>
+      <select name="site_id" class="form-select" required>
+        <option value="">-- Select Site --</option>
+        {% for s in sites %}
+          <option value="{{ s.id }}" {% if selected_site==s.id %}selected{% endif %}>
+            {{ s.site_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Select Month</label>
+      <input type="month" name="month" class="form-control"
+             value="{{ selected_month }}" required>
+    </div>
+
+    <div class="col-md-4 d-flex align-items-end">
+      <button class="btn btn-primary w-100">Load</button>
+    </div>
+  </form>
+
+  {% if labours %}
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Labour</th>
+            <th>Mess ₹</th>
+            <th>Canteen ₹</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in labours %}
+            {% set e = expenses_map.get(l.id) %}
+            <tr data-labour="{{ l.id }}">
+              <td>{{ loop.index }}</td>
+              <td>{{ l.name }}</td>
+              <td>
+                <input type="number" class="form-control mess"
+                       value="{{ e.mess_amount if e else 0 }}">
+              </td>
+              <td>
+                <input type="number" class="form-control canteen"
+                       value="{{ e.canteen_amount if e else 0 }}">
+              </td>
+              <td>
+                <button class="btn btn-success btn-sm save-btn">Save</button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.querySelectorAll('.save-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const row = this.closest('tr');
+
+    fetch('/admin/monthly-expenses/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        labour_id: row.dataset.labour,
+        site_id: {{ selected_site }},
+        month: "{{ selected_month }}",
+        mess: row.querySelector('.mess').value || 0,
+        canteen: row.querySelector('.canteen').value || 0
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        alert('Saved');
+      } else {
+        alert('Error saving data');
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

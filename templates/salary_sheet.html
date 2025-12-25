@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Labour Salary Sheet{% endblock %}
+{% block page_title %}Labour Salary Sheet{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- FILTER -->
+  <form method="get" class="card shadow-sm border-0 mb-4">
+    <div class="card-body row g-3 align-items-end">
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Site</label>
+        <select name="site_id" class="form-select" required>
+          <option value="">Select Site</option>
+          {% for s in sites %}
+            <option value="{{ s.id }}" {% if selected_site == s.id %}selected{% endif %}>
+              {{ s.site_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Month</label>
+        <input type="month" name="month" class="form-control" value="{{ selected_month }}" required>
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100">Generate</button>
+      </div>
+
+      {% if rows %}
+      <div class="col-md-2">
+        <a href="{{ request.full_path }}&export=1" class="btn btn-success w-100">
+          <i class="fa-solid fa-file-excel"></i> Export
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if rows %}
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Sl. No.</th>
+            <th>Name</th>
+            <th>Bank Account</th>
+            <th>IFSC Code</th>
+            <th>Net Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.bank_account or '-' }}</td>
+            <td>{{ r.ifsc_code or '-' }}</td>
+            <td class="fw-semibold">₹{{ "%.2f"|format(r.net_amount) }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="table-secondary fw-bold">
+            <td colspan="4" class="text-end">TOTAL</td>
+            <td>₹{{ "%.2f"|format(grand_total) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% elif selected_site and selected_month %}
+    <div class="text-muted text-center py-4">No data found.</div>
+  {% endif %}
+
+</div>
+{% endblock %}

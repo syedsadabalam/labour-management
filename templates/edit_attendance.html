@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Attendance{% endblock %}
+{% block page_title %}Edit Attendance Record{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-semibold text-dark mb-0">
+      <i class="fa-solid fa-calendar-check me-2 text-primary"></i>Edit Attendance
+    </h5>
+    <a href="{{ url_for('manager_bp.mark_attendance') }}" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Attendance List
+    </a>
+  </div>
+
+  <!-- EDIT FORM -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom fw-semibold">
+      Update Attendance Information
+    </div>
+
+    <div class="card-body p-4">
+      <form method="POST" action="{{ url_for('manager_bp.edit_attendance', attendance_id=attendance.id) }}">
+        
+        <!-- LABOUR NAME -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Labour Name</label>
+          <input type="text" class="form-control" value="{{ attendance.labour.name }}" readonly />
+        </div>
+
+        <!-- ATTENDANCE DATE -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Date</label>
+          <input type="text" class="form-control" value="{{ attendance.date.strftime('%d-%m-%Y') }}" readonly />
+        </div>
+
+        <!-- day_shift -->
+        <div class="mb-3">
+          <label for="day_shift" class="form-label fw-semibold">Attendance Status</label>
+          <select name="day_shift" id="day_shift" class="form-select" required>
+            <option value="Present" {% if attendance.day_shift == 'Present' %}selected{% endif %}>Present</option>
+        
+            
+            <option value="Absent" {% if attendance.day_shift == 'Absent' %}selected{% endif %}>Absent</option>
+          </select>
+        </div>
+
+        <!-- OVERTIME -->
+        <div class="mb-3">
+          <label for="night_shift" class="form-label fw-semibold">Night Shift</label>
+          <select name="night_shift" id="night_shift" class="form-select" required>
+            <option value="Absent" {% if attendance.night_shift == 'Absent' %}selected{% endif %}>Absent</option>
+            <option value="Present" {% if attendance.night_shift == 'Present' %}selected{% endif %}>Present</option>
+          </select>
+        </div>
+
+
+        <!-- NOTE -->
+        <div class="mb-4">
+          <label for="note" class="form-label fw-semibold">Notes (optional)</label>
+          <textarea
+            id="note"
+            name="note"
+            class="form-control"
+            rows="2"
+            placeholder="Add any extra notes...">{{ attendance.note or '' }}</textarea>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-success px-4">
+            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+          </button>
+          <a href="{{ url_for('manager_bp.mark_attendance') }}" class="btn btn-outline-secondary ms-2">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

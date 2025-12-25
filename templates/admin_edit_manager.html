@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-bottom fw-semibold">
+    Edit Manager Details
+  </div>
+
+  <div class="card-body p-4">
+    <form method="POST" action="{{ url_for('admin_bp.admin_edit_manager', manager_id=manager.id) }}">
+
+      <!-- USERNAME -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Username</label>
+        <input type="text" class="form-control" name="username" value="{{ manager.username }}" required>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Password</label>
+        <input type="password" class="form-control" name="password" placeholder="Leave blank to keep unchanged">
+      </div>
+
+      <!-- SITE -->
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Assign Site</label>
+        <select name="site_id" class="form-select" required>
+          <option value="" disabled>Select Site</option>
+          {% for site in sites %}
+            <option value="{{ site.id }}" {% if manager.site_id == site.id %}selected{% endif %}>
+              {{ site.site_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="text-end">
+        <button type="submit" class="btn btn-success px-4">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+        <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

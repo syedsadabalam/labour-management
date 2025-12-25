@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Monthly Payroll Report{% endblock %}
+{% block page_title %}Monthly Payroll Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- FILTER BAR -->
+  <form method="get" class="card shadow-sm border-0 mb-4">
+    <div class="card-body row g-3 align-items-end">
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Site</label>
+        <select name="site_id" class="form-select" required>
+          <option value="">Select Site</option>
+          {% for s in sites %}
+            <option value="{{ s.id }}"
+              {% if selected_site == s.id %}selected{% endif %}>
+              {{ s.site_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Month</label>
+        <input type="month"
+               name="month"
+               class="form-control"
+               value="{{ selected_month }}"
+               required>
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100">
+          <i class="fa-solid fa-rotate"></i> Generate
+        </button>
+      </div>
+
+      {% if rows %}
+      <div class="col-md-2">
+        <a
+          href="{{ url_for('admin_bp.monthly_report',
+                          site_id=selected_site,
+                          month=selected_month,
+                          export=1) }}"
+          class="btn btn-success">
+          Export Excel
+        </a>
+
+      </div>
+      {% endif %}
+
+    </div>
+  </form>
+
+  {% if not selected_site or not selected_month %}
+    <div class="alert alert-info">
+      Please select a site and month to generate payroll.
+    </div>
+  {% endif %}
+
+  {% if rows %}
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Labour</th>
+            <th>Site</th>
+            <th>Day Shift</th>
+            <th>Night Shift</th>
+            <th>Total Pay (₹)</th>
+            <th>Advance Paid (₹)</th>
+            <th>Expenses (₹)</th>
+            <th>Net Payable (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+
+            <!-- Labour Name -->
+            <td class="fw-semibold">
+              {{ r.labour_name }}
+            </td>
+
+            <!-- Site Name -->
+            <td>
+              {{ r.site_name }}
+            </td>
+
+            <!-- Day Shift Count -->
+            <td class="text-center">
+              {{ r.day_shift }}
+            </td>
+
+            <!-- Night Shift Count -->
+            <td class="text-center">
+              {{ r.night_shift }}
+            </td>
+
+            <!-- Total Pay -->
+            <td>
+              ₹{{ "%.2f"|format(r.total_pay) }}
+            </td>
+
+            <!-- Advance -->
+            <td class="text-danger">
+              ₹{{ "%.2f"|format(r.advance_paid) }}
+            </td>
+
+            <!-- Expenses -->
+            <td>
+              ₹{{ "%.2f"|format(r.expenses) }}
+            </td>
+
+            <!-- Net Payable -->
+            <td class="fw-bold {% if r.net_payable < 0 %}text-danger{% else %}text-success{% endif %}">
+              ₹{{ "%.2f"|format(r.net_payable) }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+
+      </table>
+    </div>
+  </div>
+  {% elif selected_site and selected_month %}
+    <div class="text-center text-muted py-4">
+      No payroll data found for selected site and month.
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

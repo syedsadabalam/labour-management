@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-bottom fw-semibold">
+    Edit Advance Payment
+  </div>
+
+  <div class="card-body p-4">
+    <form method="POST" action="{{ url_for('manager_bp.edit_payment', payment_id=payment.id) }}">
+
+      <!-- SELECT LABOUR -->
+      <div class="mb-3">
+        <label for="labour_id" class="form-label fw-semibold">Select Labour <span class="text-danger">*</span></label>
+        <select class="form-select" id="labour_id" name="labour_id" required>
+          {% for labour in labours %}
+            <option value="{{ labour.id }}" {% if payment.labour_id == labour.id %}selected{% endif %}>
+              {{ labour.name }} ({{ labour.phone or 'No Phone' }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- ADVANCE AMOUNT -->
+      <div class="mb-3">
+        <label for="advance" class="form-label fw-semibold">Advance Amount (₹) <span class="text-danger">*</span></label>
+        <input
+          type="number"
+          class="form-control"
+          id="advance"
+          name="advance"
+          placeholder="Enter advance amount"
+          value="{{ payment.advance }}"
+          min="0"
+          required
+        />
+      </div>
+
+      <!-- NOTE -->
+      <div class="mb-4">
+        <label for="note" class="form-label fw-semibold">Note (optional)</label>
+        <textarea
+          class="form-control"
+          id="note"
+          name="note"
+          placeholder="e.g. Payment correction"
+          rows="2"
+        >{{ payment.note or '' }}</textarea>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="text-end">
+        <button type="submit" class="btn btn-success px-4">
+          <i class="fa-solid fa-floppy-disk"></i> Update Payment
+        </button>
+        <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-secondary ms-2">
+          Cancel
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Labours{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col-8">
+      <h4 class="mb-0">Labours</h4>
+      <p class="text-muted small">Labours assigned to your site</p>
+    </div>
+    <div class="col-4 text-end">
+      <!-- Manager has NO admin actions -->
+      <span class="badge bg-secondary">View only</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <form method="get" class="mb-3">
+    <div class="input-group" style="max-width: 350px;">
+      <input
+      type="text"
+      name="search"
+      class="form-control"
+      placeholder="Search by name, phone, bank or IFSC"
+      value="{{ search }}">
+
+      <button class="btn btn-outline-secondary">Search</button>
+      <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-dark">
+        Reset
+      </a>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      {% if labours %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width:50px">#</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Bank Account No</th>
+              <th>IFSC Code</th>
+              <th>Site</th>
+              <th>Daily Wage</th>
+              <th>Status</th>
+              <th style="width:120px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for labour in labours %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ labour.name or '-' }}</td>
+              <td>{{ labour.phone or '-' }}</td>
+              <td>{{ labour.bank_account or '-' }}</td>
+              <td>{{ labour.ifsc_code or '-' }}</td>
+
+              <td>
+                {% if labour.site %}
+                  {{ labour.site.site_name or '-' }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if labour.daily_wage is not none %}
+                  ₹{{ "%.2f"|format(labour.daily_wage) }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if labour.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <span class="badge bg-secondary">View only</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">No labours found.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Site{% endblock %}
+{% block page_title %}Add New Work Site{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-semibold text-dark mb-0">
+      <i class="fa-solid fa-building me-2 text-primary"></i>Add New Work Site
+    </h5>
+    <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="btn btn-outline-secondary">
+
+      <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <!-- ADD SITE FORM -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom fw-semibold">
+      Site Registration Form
+    </div>
+
+    <div class="card-body p-4">
+      <form method="POST" action="{{ url_for('admin_bp.admin_add_site') }}">
+        
+        <!-- SITE NAME -->
+        <div class="mb-3">
+          <label for="site_name" class="form-label fw-semibold">Site Name <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            id="site_name"
+            name="site_name"
+            placeholder="Enter work site name"
+            required
+          />
+        </div>
+
+        <!-- LOCATION -->
+        <div class="mb-3">
+          <label for="location" class="form-label fw-semibold">Location</label>
+          <input
+            type="text"
+            class="form-control"
+            id="location"
+            name="location"
+            placeholder="Enter site location (e.g., Sindri, Dhanbad)"
+          />
+        </div>
+
+        <div class="text-end">
+          <button type="submit" class="btn btn-success px-4">
+            <i class="fa-solid fa-plus"></i> Add Site
+          </button>
+          <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="btn btn-outline-secondary">
+
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+/* ==========================================================
+   LABOUR MANAGEMENT — Admin Styles (modernized)
+   Replace the file static/css/admin.css with this content.
+   ========================================================== */
+
+/* -----------------------
+   Design tokens
+   ----------------------- */
+:root {
+  --primary: #1f6feb;
+  --primary-dark: #1158c7;
+  --accent: #FF9800;
+  --success: #2ea043;
+  --danger: #e63946;
+  --muted: #6b7280;
+  --bg: #F6F8FB;
+  --card: #ffffff;
+
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --shadow-soft: 0 8px 24px rgba(9,30,66,0.06);
+}
+
+/* -----------------------
+   Base
+   ----------------------- */
+* { box-sizing: border-box; }
+body {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: #0f172a;
+  font-size: 14px;
+  -webkit-font-smoothing:antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* -----------------------
+   Sidebar
+   ----------------------- */
+.sidebar {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  width: 260px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 1rem 0;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+.sidebar .sidebar-top { display:flex; align-items:center; gap:12px; padding: 1rem; }
+.sidebar .brand-text .fw-bold { color: #fff; }
+.sidebar .nav-link { display:flex; align-items:center; padding:0.7rem 1rem; color:#c9d1d9; font-weight:600; }
+.sidebar .nav-link i { width:24px; text-align:center; margin-right:10px; }
+.sidebar .nav-link:hover { background: rgba(255,255,255,0.03); color: #fff; }
+.sidebar .nav-link.active { background: var(--primary); color: #fff; border-left: 4px solid var(--accent); }
+
+/* -----------------------
+   Main content
+   ----------------------- */
+.main-content {
+  margin-left: 260px;
+  transition: margin-left .2s ease;
+  min-height: 100vh;
+}
+.topbar {
+  height:64px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.work-area { padding: 22px; }
+
+/* -----------------------
+   Card base
+   ----------------------- */
+.card { border-radius: var(--radius-md); border: 0; background: var(--card); box-shadow: var(--shadow-soft); padding: var(--space-md); }
+.card .card-header { background: transparent; border-bottom: 1px solid #eef2f7; }
+
+/* -----------------------
+   KPI grid and cards
+   ----------------------- */
+.kpi-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg); }
+
+.kpi { display:flex; align-items:center; gap: var(--space-md); padding: 14px; border-radius: var(--radius-md); min-height:84px; background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.0)); }
+.kpi .kpi-icon { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; box-shadow: 0 6px 14px rgba(15,23,42,0.06); }
+.kpi h6 { margin:0; font-size:13px; color:var(--muted); font-weight:700; letter-spacing:0.2px; }
+.kpi .kpi-value { font-size:20px; font-weight:800; color:#07103b; margin:0; }
+
+/* color variants for icon background */
+.kpi.primary .kpi-icon { background: var(--primary); }
+.kpi.success .kpi-icon { background: var(--success); }
+.kpi.warn .kpi-icon { background: var(--accent); }
+.kpi.danger .kpi-icon { background: var(--danger); }
+
+/* subtle lift on hover */
+.kpi:hover { transform: translateY(-6px); transition: transform 160ms ease; }
+
+/* -----------------------
+   Quick actions
+   ----------------------- */
+.quick-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: var(--space-md); }
+.action-btn { display:inline-flex; align-items:center; gap:10px; border-radius:10px; padding:10px 14px; background:#fff; border:1px solid #eef4ff; transition: transform .12s ease, box-shadow .12s ease; }
+.action-btn:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(15,23,42,0.06); }
+
+/* -----------------------
+   Site table
+   ----------------------- */
+.table thead th { background: transparent; color: #374151; border-bottom:1px solid #E6EEF8; font-weight:700; }
+.table td, .table th { vertical-align: middle; }
+.site-actions .btn { margin-right:8px; border-radius:8px; }
+
+/* dropdown tweaks */
+.dropdown-menu { min-width: 190px; border-radius:8px; box-shadow: 0 8px 30px rgba(9,30,66,0.08); }
+
+/* -----------------------
+   Form inputs, buttons, misc
+   ----------------------- */
+.form-control, .form-select { border-radius: 8px; border: 1px solid #e7edf9; box-shadow:none; }
+.btn { border-radius: 8px; font-weight:600; }
+.btn-outline-primary { border-color: rgba(31,111,235,0.14); color: var(--primary); }
+.btn-outline-primary:hover { background: var(--primary); color:#fff; }
+
+/* -----------------------
+   Table responsiveness and footer totals
+   ----------------------- */
+.table-responsive { background: transparent; border-radius: 12px; padding: 6px; }
+tfoot tr { background: #f8fafc; font-weight:700; }
+
+/* -----------------------
+   Responsive
+   ----------------------- */
+@media (max-width: 992px) {
+  .sidebar { position: static; width: 100%; min-height: auto; }
+  .main-content { margin-left: 0; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* -----------------------
+   Small helpers
+   ----------------------- */
+.text-muted { color: var(--muted) !important; }
+.small { font-size: 13px; }

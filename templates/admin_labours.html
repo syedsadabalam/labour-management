@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Labours{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+
+
+  <div class="row mb-3">
+    <div class="col-8">
+      <h4 class="mb-0">Labours</h4>
+      <p class="text-muted small">Manage your labour list</p>
+    </div>
+    
+    <div class="col-4 text-end">
+      <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-sm btn-outline-secondary">Sites</a>
+      <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-sm btn-outline-secondary">Managers</a>
+      <a href="{{ url_for('admin_bp.admin_add_payment') }}" class="btn btn-sm btn-primary">Add Advance</a>
+      <a href="{{ url_for('admin_bp.admin_add_labour') }}" class="btn btn-sm btn-success"> Add Labour</a>
+
+    </div>
+  </div>
+      <!-- Filters -->
+    <form method="get" class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+
+          <!-- Search -->
+          <div class="col-md-4">
+            <label class="form-label small">Search (Name / Phone)</label>
+            <input type="text"
+                  name="search"
+                  class="form-control"
+                  placeholder="Enter name or phone"
+                  value="{{ search }}">
+          </div>
+
+          <!-- Site Filter -->
+          <div class="col-md-4">
+            <label class="form-label small">Site</label>
+            <select name="site_id" class="form-select">
+              <option value="">All Sites</option>
+              {% for site in sites %}
+                <option value="{{ site.id }}"
+                  {% if site_id|int == site.id %}selected{% endif %}>
+                  {{ site.site_name or site.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Buttons -->
+          <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              Apply
+            </button>
+            <a href="{{ url_for('admin_bp.admin_labours') }}"
+              class="btn btn-outline-secondary">
+              Reset
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </form>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      {% if labours %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width:50px">#</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Bank Account No</th>
+              <th>IFSC Code</th>
+              <th>Site</th>
+              <th>Daily Wage</th>
+              <th>Active</th>
+              <th style="width:180px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for labour in labours %}
+            <tr>
+              <td>{{ loop.index }}</td>
+
+              <td>{{ labour.name or '-' }}</td>
+
+              <td>{{ labour.phone or '-' }}</td>
+
+              <td>{{ labour.bank_account or '-' }}</td>
+
+              <td>{{ labour.ifsc_code or '-' }}</td>
+
+              <td>
+                {% if labour.site %}
+                  {{ labour.site.site_name or labour.site.name or '-' }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if labour.daily_wage is not none %}
+                  ₹{{ "%.2f"|format(labour.daily_wage) }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if labour.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <!-- Edit -->
+                <a href="{{ url_for('admin_bp.admin_edit_labour', labour_id=labour.id) }}"
+                   class="btn btn-sm btn-outline-primary">
+                  Edit
+                </a>
+
+                <!-- Delete -->
+                <form action="{{ url_for('admin_bp.delete_labour', labour_id=labour.id) }}"
+                      method="post"
+                      style="display:inline;">
+                  <button type="submit"
+                          class="btn btn-sm btn-danger"
+                          onclick="return confirm('This labour will be deleted ONLY if no attendance or payments exist.\n\nContinue?')">
+                    Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">No labours found.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% if pagination.pages > 1 %}
+<div class="d-flex justify-content-between align-items-center mt-3">
+
+  <small class="text-muted">
+    Page {{ pagination.page }} of {{ pagination.pages }}
+  </small>
+
+  <div class="btn-group btn-group-sm">
+
+    {% if pagination.has_prev %}
+      <a class="btn btn-outline-secondary"
+         href="{{ url_for('admin_bp.admin_labours',
+                          page=pagination.prev_num,
+                          search=search,
+                          site_id=site_id) }}">
+        Prev
+      </a>
+    {% endif %}
+
+    {% if pagination.has_next %}
+      <a class="btn btn-outline-secondary"
+         href="{{ url_for('admin_bp.admin_labours',
+                          page=pagination.next_num,
+                          search=search,
+                          site_id=site_id) }}">
+        Next
+      </a>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

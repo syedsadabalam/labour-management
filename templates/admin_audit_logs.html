@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}System Activity Logs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- FILTERS -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label class="form-label">Role</label>
+      <select name="role" class="form-select">
+        <option value="">All</option>
+        <option value="admin" {% if selected_role=='admin' %}selected{% endif %}>Admin</option>
+        <option value="manager" {% if selected_role=='manager' %}selected{% endif %}>Manager</option>
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Site</label>
+      <select name="site_id" class="form-select">
+        <option value="">All Sites</option>
+        {% for site in sites %}
+          <option value="{{ site.id }}" {% if selected_site==site.id|string %}selected{% endif %}>
+            {{ site.site_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-primary w-100">
+        <i class="fa-solid fa-filter"></i> Apply
+      </button>
+      
+    </div>
+    <div class="text-end">
+      <form method="post"
+            action="{{ url_for('admin_bp.archive_audit_now') }}"
+            onsubmit="return confirm('This will archive audit logs older than the last 3 months. Continue?');">
+        <button class="btn btn-sm btn-warning mb-3">
+          <i class="fa-solid fa-box-archive"></i> Archive Old Logs
+        </button>
+      </form>
+
+    </div>
+
+  </form>
+
+  
+  
+
+  <!-- TABLE -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Date & Time</th>
+              <th>User</th>
+              <th>Role</th>
+              <th>Site</th>
+              <th>Action</th>
+              <th>Details</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="text-nowrap">
+                {% if log.created_at %}
+                  {{ log.created_at.replace(tzinfo=pytz.utc)
+                                  .astimezone(pytz.timezone('Asia/Kolkata'))
+                                  .strftime('%d-%m-%Y %I:%M %p') }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>{{ log.username or '-' }}</td>
+              <td>
+                <span class="badge bg-{% if log.role=='admin' %}danger{% else %}primary{% endif %}">
+                  {{ log.role|title }}
+                </span>
+              </td>
+              <td>{{ log.site_id or '-' }}</td>
+              <td>{{ log.action }}</td>
+              <td class="text-muted small">{{ log.details or '-' }}</td>
+
+
+              <td class="text-muted small">{{ log.ip_address or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted p-4">
+                No activity found
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Edit Labour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col-8">
+      <h4 class="mb-0">Edit Labour</h4>
+      <p class="text-muted small">Update labour details</p>
+    </div>
+    <div class="col-4 text-end">
+      <a href="{{ url_for('admin_bp.admin_labours') }}"
+         class="btn btn-sm btn-outline-secondary">
+        Back to Labours
+      </a>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+
+        <div class="row">
+          <!-- Name -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Labour Name</label>
+            <input type="text"
+                   name="name"
+                   class="form-control"
+                   value="{{ labour.name }}"
+                   required>
+          </div>
+
+          <!-- Phone -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Phone No</label>
+            <input type="text"
+              name="phone"
+              class="form-control"
+              value="{{ labour.phone }}"
+              pattern="[0-9]{10}"
+              maxlength="10"
+              title="Phone number must be exactly 10 digits"
+              required>
+
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Bank Account -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Bank Account No</label>
+            <input type="text"
+                name="bank_account"
+                class="form-control"
+                value="{{ labour.bank_account }}"
+                pattern="[0-9]+"
+                title="Bank account number must contain digits only"
+                required>
+
+          </div>
+
+          <!-- IFSC -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">IFSC Code</label>
+            <input type="text"
+                   name="ifsc_code"
+                   class="form-control"
+                   value="{{ labour.ifsc_code or '' }}">
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Site -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Site</label>
+            <select name="site_id" class="form-select">
+              <option value="">-- Select Site --</option>
+              {% for site in sites %}
+                <option value="{{ site.id }}"
+                  {% if labour.site_id == site.id %}selected{% endif %}>
+                  {{ site.site_name or site.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Daily Wage -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Daily Wage</label>
+            <input type="number"
+                   name="daily_wage"
+                   class="form-control"
+                   step="0.01"
+                   value="{{ labour.daily_wage or '' }}">
+          </div>
+        </div>
+
+        <!-- Active -->
+        <div class="mb-3 form-check">
+          <input type="checkbox"
+                 name="is_active"
+                 class="form-check-input"
+                 id="activeCheck"
+                 {% if labour.is_active %}checked{% endif %}>
+          <label class="form-check-label" for="activeCheck">
+            Active
+          </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">
+            Update Labour
+          </button>
+          <a href="{{ url_for('admin_bp.admin_labours') }}"
+             class="btn btn-outline-secondary ms-2">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

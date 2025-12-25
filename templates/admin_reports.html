@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-bottom fw-semibold">
+    Monthly Payroll Report
+  </div>
+  <div class="card-body p-4">
+    <form method="GET" action="{{ url_for('admin_bp.admin_reports') }}" class="row g-3 mb-4">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Select Site</label>
+        <select class="form-select" name="site_id">
+          <option value="">All Sites</option>
+          {% for site in sites %}
+            <option value="{{ site.id }}" {% if selected_site and selected_site == site.id %}selected{% endif %}>{{ site.site_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Select Month</label>
+        <input type="month" name="month" class="form-control" value="{{ selected_month or '' }}" required>
+      </div>
+ 
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">Generate</button>
+        {% if selected_month %}
+          <a href="{{ url_for('admin_bp.admin_reports_export', month=selected_month, site_id=selected_site) }}" class="btn btn-success">Export CSV</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Labour</th>
+            <th>Site</th>
+            <th class="text-center">Present Days</th>
+            <th class="text-center">Night Shift</th>
+            <th class="text-end">Total Pay (₹)</th>
+            <th class="text-end">Advance Paid (₹)</th>
+            <th class="text-end">Mess Expenses (₹)</th>
+            <th class="text-end">Canteen Expenses (₹)</th>
+            <th class="text-end">Net Payable (₹)</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for r in payroll %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.site or '-' }}</td>
+
+            {# ensure we print 0 when value is None/empty #}
+            <td class="text-center">{{ (r.present_days or 0) }}</td>
+            <td class="text-center">{{ (r.night_shift or 0) }}</td>
+
+            <td class="text-end">₹{{ '%.0f'|format((r.total_pay|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '%.2f'|format((r.advance_paid|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((r.mess_amt|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((r.canteen_amt|default(0))|float) }}</td>
+
+            <td class="text-end">₹{{ '%.2f'|format((r.net_payable|default(0))|float) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted">No records. Pick a month and click Generate.</td></tr>
+          {% endfor %}
+        </tbody>
+
+       {% if totals %}
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="3" class="text-end">TOTAL</td>
+            <td class="text-center">{{ (totals.total_present|default(0)) }}</td>
+            <td class="text-center">{{ (totals.total_night|default(0)) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((totals.total_pay|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((totals.total_advance|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((totals.total_mess|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((totals.total_canteen|default(0))|float) }}</td>
+            <td class="text-end">₹{{ '{:,.2f}'.format((totals.total_net_payable|default(0))|float) }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

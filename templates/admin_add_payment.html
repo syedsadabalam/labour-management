@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Add Payment{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0">Add Payment</h4>
+      <p class="text-muted small">Record labour advance payment</p>
+    </div>
+    <a href="{{ url_for('admin_bp.admin_payments') }}"
+       class="btn btn-sm btn-outline-secondary">
+      Back to Payments
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+
+      <form method="post">
+
+        <!-- Labour + Site -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Labour</label>
+            <select class="form-select" id="labour_id" name="labour_id" required>
+              <option value="">-- Select Labour --</option>
+              {% for labour in labours %}
+                <option 
+                  value="{{ labour.id }}"
+                  data-site-id="{{ labour.site_id }}"
+                  data-site-name="{{ labour.site.site_name if labour.site }}"
+                >
+                  {{ labour.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Site</label>
+
+            <!-- Disabled select (UI only) -->
+            <select class="form-select" id="site_display" disabled>
+              <option value="">Auto-selected</option>
+            </select>
+
+            <!-- Hidden field (actual submitted value) -->
+            <input type="hidden" id="site_id" name="site_id">
+          </div>
+        </div>
+
+        <!-- Date + Advance -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Date</label>
+            <input type="date"
+              id="payment_date"
+              name="date"
+              class="form-control"
+              required>
+
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Advance Amount</label>
+            <input type="number"
+                   name="advance"
+                   class="form-control"
+                   step="0.01"
+                   min="0"
+                   required>
+          </div>
+        </div>
+
+        <!-- Note -->
+        <div class="mb-3">
+          <label class="form-label">Note</label>
+          <textarea name="note"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Optional"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success">
+            Add Payment
+          </button>
+          <a href="{{ url_for('admin_bp.admin_payments') }}"
+             class="btn btn-outline-secondary">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('labour_id').addEventListener('change', function () {
+  const selected = this.options[this.selectedIndex];
+  const siteId = selected.getAttribute('data-site-id');
+  const siteName = selected.getAttribute('data-site-name');
+
+  const siteDisplay = document.getElementById('site_display');
+  const siteHidden = document.getElementById('site_id');
+
+  if (siteId) {
+    siteDisplay.innerHTML = `<option>${siteName}</option>`;
+    siteHidden.value = siteId;
+  } else {
+    siteDisplay.innerHTML = `<option>Auto-selected</option>`;
+    siteHidden.value = '';
+  }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.getElementById('payment_date');
+
+    // today's date in YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
+
+    // auto-select today by default
+    dateInput.value = today;
+
+    // block future dates in calendar UI
+    dateInput.setAttribute('max', today);
+
+    // extra safety: if someone manually types a future date
+    dateInput.addEventListener('change', function () {
+        if (this.value > today) {
+            alert('Future dates are not allowed');
+            this.value = today;
+        }
+    });
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Manager Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- KPI CARDS -->
+  <div class="row g-4 mb-4">
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="fa-solid fa-users fa-2x text-primary me-3"></i>
+            <div>
+              <div class="text-muted small">Total Active Labours</div>
+              <h4 class="mb-0">{{ total_labours }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="fa-solid fa-calendar-check fa-2x text-success me-3"></i>
+            <div>
+              <div class="text-muted small">Today Present</div>
+              <h4 class="mb-0">{{ today_present }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="fa-solid fa-user-slash fa-2x text-danger me-3"></i>
+            <div>
+              <div class="text-muted small">Today Absent</div>
+              <h4 class="mb-0">{{ today_absent }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="fa-solid fa-hand-holding-dollar fa-2x text-warning me-3"></i>
+            <div>
+              <div class="text-muted small">Advances (This Month)</div>
+              <h4 class="mb-0">₹ {{ advances_month }}</h4>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATUS ROW -->
+  <div class="row g-4 mb-4">
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-2">Attendance Status</h6>
+          {% if attendance_marked %}
+            <span class="badge bg-success">Attendance marked for today</span>
+          {% else %}
+            <span class="badge bg-danger">Attendance NOT marked yet</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-2">Advance Activity</h6>
+          <p class="mb-0 text-muted">
+            ₹ {{ advances_today }} advanced today
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">Quick Actions</h6>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-primary">Manage Labours</a>
+        <a href="{{ url_for('manager_bp.mark_attendance') }}" class="btn btn-outline-success">Mark Attendance</a>
+        <a href="{{ url_for('manager_bp.add_payment') }}" class="btn btn-outline-warning">Add Advance</a>
+        <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-info">Advance History</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT ACTIVITY -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">Recent Activity</h6>
+
+      {% if recent_attendance or recent_payments %}
+        <ul class="list-group list-group-flush">
+
+          {% for a in recent_attendance %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>
+                {{ a.labour.name }} marked
+                {{ 'Present' if a.day_shift_flag else 'Absent' }}
+              </span>
+              <small class="text-muted">{{ a.date.strftime('%d-%m-%Y') }}</small>
+            </li>
+          {% endfor %}
+
+          {% for p in recent_payments %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>
+                ₹{{ p.advance }} advance → {{ p.labour.name }}
+              </span>
+              <small class="text-muted">{{ p.date.strftime('%d-%m-%Y') }}</small>
+            </li>
+          {% endfor %}
+
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">No recent activity.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

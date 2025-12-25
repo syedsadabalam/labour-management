@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Add Manager{% endblock %}
+{% block page_title %}Add New Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-semibold text-dark mb-0">
+      <i class="fa-solid fa-user-tie me-2 text-primary"></i> Add New Manager
+    </h5>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Managers
+    </a>
+  </div>
+
+  <!-- ADD MANAGER FORM -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom fw-semibold">
+      Manager Registration Form
+    </div>
+
+    <div class="card-body p-4">
+      <form method="POST" action="{{ url_for('admin_bp.admin_add_manager') }}">
+
+        <!-- MANAGER NAME -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Manager Username <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            name="username"
+            placeholder="Enter manager username"
+            required
+          />
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Password <span class="text-danger">*</span>
+          </label>
+          <input
+            type="password"
+            class="form-control"
+            name="password"
+            placeholder="Enter password"
+            required
+          />
+          <div class="form-text">
+            Use at least 6 characters, include letters and numbers.
+          </div>
+        </div>
+
+        <!-- SELECT SITE -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Assign Site <span class="text-danger">*</span>
+          </label>
+          <select name="site_id" class="form-select" required>
+            <option value="">Select Site</option>
+            {% for site in sites %}
+              <option value="{{ site.id }}">{{ site.site_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-success px-4">
+            <i class="fa-solid fa-user-plus"></i> Add Manager
+          </button>
+          <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

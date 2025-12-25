@@ -1,0 +1,36 @@
+/* dashboard custom styles */
+.stat-card {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(20,30,60,0.04);
+  border: 1px solid rgba(0,0,0,0.04);
+  height: 96px;
+}
+  
+.stat-icon {
+  width:56px;
+  height:56px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:22px;
+}
+
+.stat-icon i { font-size:20px; }
+.stat-body { flex:1; }
+.stat-title { font-size:13px; color:#6c757d; }
+.stat-value { font-size:22px; font-weight:700; margin-top:4px; }
+
+.card.rounded-lg { border-radius:14px; box-shadow: 0 6px 18px rgba(20,30,60,0.04); border: 1px solid rgba(0,0,0,0.04); }
+
+.display-6 { font-size:1.9rem; }
+
+.wave { margin-left:6px; }
+
+.table thead.table-light th { border-top:0; }
+.table tbody tr td { vertical-align: middle; }
