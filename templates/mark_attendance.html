@@ -52,7 +52,7 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ labour.name }}</td>
-            <td>{{ labour.phone }}</td>
+            <td class="text-muted">{{ labour.phone or '-' }}</td>
 
             <td>
               <select name="day_shift_{{ labour.id }}" class="form-select">
