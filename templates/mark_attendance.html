@@ -40,6 +40,7 @@
           <tr>
             <th>#</th>
             <th>Labour</th>
+            <th>Phone</th>
             <th>Day Shift</th>
             <th>Night Shift</th>
             
@@ -51,6 +52,7 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ labour.name }}</td>
+            <td>{{ labour.phone }}</td>
 
             <td>
               <select name="day_shift_{{ labour.id }}" class="form-select">
