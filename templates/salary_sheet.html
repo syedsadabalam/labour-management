@@ -50,7 +50,8 @@
             <th>Name</th>
             <th>Bank Account</th>
             <th>IFSC Code</th>
-            <th>Net Amount (₹)</th>
+            <th>Total Pay (₹)</th>
+
           </tr>
         </thead>
         <tbody>
@@ -60,7 +61,7 @@
             <td>{{ r.name }}</td>
             <td>{{ r.bank_account or '-' }}</td>
             <td>{{ r.ifsc_code or '-' }}</td>
-            <td class="fw-semibold">₹{{ "%.2f"|format(r.net_amount) }}</td>
+            <td class="fw-semibold">₹{{ "%.2f"|format(r.total_pay) }}</td>
           </tr>
           {% endfor %}
           <tr class="table-secondary fw-bold">

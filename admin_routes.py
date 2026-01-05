@@ -21,6 +21,7 @@ from sqlalchemy.exc import IntegrityError
 import re
 
 
+
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin', template_folder='templates')
 
 
@@ -872,6 +873,34 @@ def monthly_report():
         start_date = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
 
+
+        attendance_subq = (
+            db.session.query(
+                Attendance.labour_id.label('labour_id'),
+
+                # ✅ total days worked (this is what you really want)
+                func.count(Attendance.id).label('worked_days'),
+
+                # optional: split for reporting only
+                func.sum(
+                    case((Attendance.day_shift_flag == True, 1), else_=0)
+                ).label('day_shift'),
+
+                func.sum(
+                    case((Attendance.night_shift_flag == True, 1), else_=0)
+                ).label('night_shift'),
+            )
+            .filter(
+                Attendance.site_id == site_id,
+                Attendance.date >= start_date,
+                Attendance.date < end_date
+            )
+            .group_by(Attendance.labour_id)
+            .subquery()
+        )
+
+
+
         data = (
             db.session.query(
                 Labour.id,
@@ -881,8 +910,9 @@ def monthly_report():
                 Labour.ifsc_code,
                 Labour.daily_wage,
 
-                func.coalesce(func.sum(Attendance.day_shift_flag), 0).label('day_shift'),
-                func.coalesce(func.sum(Attendance.night_shift_flag), 0).label('night_shift'),
+                func.coalesce(attendance_subq.c.worked_days, 0).label('worked_days'),
+                func.coalesce(attendance_subq.c.day_shift, 0).label('day_shift'),
+                func.coalesce(attendance_subq.c.night_shift, 0).label('night_shift'),
 
                 func.coalesce(func.sum(Payment.advance), Decimal('0.00')).label('advance_paid'),
                 func.coalesce(
@@ -891,8 +921,9 @@ def monthly_report():
                     Decimal('0.00')
                 ).label('expenses')
             )
-            .join(Attendance, Attendance.labour_id == Labour.id)
-            .join(Site, Site.id == Attendance.site_id)
+            .join(attendance_subq, attendance_subq.c.labour_id == Labour.id)
+            .join(Site, Site.id == Labour.site_id)
+
 
             .outerjoin(
                 Payment,
@@ -911,12 +942,7 @@ def monthly_report():
                     LabourMonthlyExpenses.month == month
                 )
             )
-            .filter(
-                Attendance.site_id == site_id,
-                Attendance.date >= start_date,
-                Attendance.date < end_date,
-                Labour.is_active == True
-            )
+            .filter(Labour.is_active == True)
             .group_by(
                 Labour.id,
                 Labour.name,
@@ -927,35 +953,43 @@ def monthly_report():
                 LabourMonthlyExpenses.mess_amount,
                 LabourMonthlyExpenses.canteen_amount
             )
+
             .order_by(Labour.name.asc())
             .all()
         )
+
 
         for r in data:
             day = int(r.day_shift)
             night = int(r.night_shift)
             wage = Decimal(r.daily_wage or 0)
 
-            total_pay = wage * (day + night)
+            total_pay = wage * r.worked_days
+
             advance = Decimal(r.advance_paid or 0)
             expenses = Decimal(r.expenses or 0)
             net = total_pay - advance - expenses
 
             grand_total += net
 
+        
+
+
+
             rows.append({
                 'labour_name': r.labour_name,
                 'site_name': r.site_name,
+                'worked_days': int(r.worked_days),  # REQUIRED
                 'day_shift': day,
                 'night_shift': night,
                 'total_pay': total_pay,
                 'advance_paid': advance,
                 'expenses': expenses,
-                'net_payable': net,
-                'bank_account': r.bank_account,
-                'ifsc_code': r.ifsc_code
+                'net_payable': net
             })
 
+
+    # -------- EXCEL EXPORT --------
     # -------- EXCEL EXPORT --------
     if export == '1' and rows:
         df = pd.DataFrame(rows)
@@ -965,33 +999,53 @@ def monthly_report():
         df = df[[
             'Sl. No.',
             'labour_name',
-            'bank_account',
-            'ifsc_code',
+            'worked_days',
+            'day_shift',
+            'night_shift',
+            'total_pay',
+            'advance_paid',
+            'expenses',
             'net_payable'
         ]]
 
         df.columns = [
             'Sl. No.',
             'Name',
-            'Bank Account',
-            'IFSC Code',
-            'Net Amount'
+            'Worked Days',
+            'Day Shift',
+            'Night Shift',
+            'Total Pay',
+            'Advance Paid',
+            'Expenses',
+            'Net Payable'
         ]
 
-        total_row = ['','TOTAL','','', grand_total]
-        df.loc[len(df)] = total_row
+        # TOTAL ROW
+        df.loc[len(df)] = [
+            '',
+            'TOTAL',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            grand_total
+        ]
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='Salary Sheet')
+            df.to_excel(writer, index=False, sheet_name='Monthly Payroll')
 
         output.seek(0)
         return Response(
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            headers={'Content-Disposition': 'attachment;filename=Labour_Salary_Sheet.xlsx'}
+            headers={
+                'Content-Disposition':
+                'attachment;filename=Monthly_Payroll_Report.xlsx'
+            }
         )
-
     return render_template(
         'monthly_report.html',
         sites=sites,
@@ -1000,6 +1054,7 @@ def monthly_report():
         selected_month=month,
         grand_total=grand_total
     )
+
 
 # ------------------------------
 #--------Monthly EXPENSES-------
@@ -1133,6 +1188,23 @@ def labour_salary_sheet():
         start_date = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
 
+        attendance_subq = (
+            db.session.query(
+                Attendance.labour_id.label('labour_id'),
+                func.count(Attendance.id).label('worked_days')
+            )
+            .filter(
+                Attendance.site_id == site_id,
+                Attendance.date >= start_date,
+                Attendance.date < end_date
+            )
+            .group_by(Attendance.labour_id)
+            .subquery()
+        )
+
+
+
+
         raw_rows = (
             db.session.query(
                 Labour.name,
@@ -1140,8 +1212,7 @@ def labour_salary_sheet():
                 Labour.ifsc_code,
                 Labour.daily_wage,
 
-                func.coalesce(func.sum(Attendance.day_shift_flag), 0).label('day_count'),
-                func.coalesce(func.sum(Attendance.night_shift_flag), 0).label('night_count'),
+                func.coalesce(attendance_subq.c.worked_days, 0).label('worked_days'),
 
                 func.coalesce(func.sum(Payment.advance), Decimal('0.00')).label('advance'),
 
@@ -1151,7 +1222,8 @@ def labour_salary_sheet():
                     Decimal('0.00')
                 ).label('expenses')
             )
-            .join(Attendance, Attendance.labour_id == Labour.id)
+            .join(attendance_subq, attendance_subq.c.labour_id == Labour.id)
+
             .outerjoin(
                 Payment,
                 and_(
@@ -1169,38 +1241,39 @@ def labour_salary_sheet():
                     LabourMonthlyExpenses.month == month
                 )
             )
-            .filter(
-                Attendance.site_id == site_id,
-                Attendance.date >= start_date,
-                Attendance.date < end_date,
-                Labour.is_active == True
-            )
+            .filter(Labour.is_active == True)
             .group_by(
                 Labour.id,
                 Labour.name,
                 Labour.bank_account,
                 Labour.ifsc_code,
                 Labour.daily_wage,
+                attendance_subq.c.worked_days,
                 LabourMonthlyExpenses.mess_amount,
                 LabourMonthlyExpenses.canteen_amount
             )
+
+
             .order_by(Labour.name.asc())
             .all()
         )
 
+
         for r in raw_rows:
-            shifts = int(r.day_count) + int(r.night_count)
-            total_pay = Decimal(r.daily_wage) * shifts
+
+            total_pay = Decimal(r.daily_wage) * int(r.worked_days)
+
             net = total_pay - Decimal(r.advance or 0) - Decimal(r.expenses or 0)
 
             rows.append({
                 'name': r.name,
                 'bank_account': r.bank_account,
                 'ifsc_code': r.ifsc_code,
-                'net_amount': net
+                'total_pay': total_pay
             })
 
-            grand_total += net
+            grand_total += total_pay
+
 
         # ---------- EXCEL EXPORT ----------
         if export == '1':

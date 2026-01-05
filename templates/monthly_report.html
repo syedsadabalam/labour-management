@@ -71,6 +71,7 @@
             <th>Site</th>
             <th>Day Shift</th>
             <th>Night Shift</th>
+            <th>Worked Days</th>
             <th>Total Pay (₹)</th>
             <th>Advance Paid (₹)</th>
             <th>Expenses (₹)</th>
@@ -100,6 +101,10 @@
             <!-- Night Shift Count -->
             <td class="text-center">
               {{ r.night_shift }}
+            </td>
+            
+            <td class="text-center fw-semibold">
+              {{ r.worked_days }}
             </td>
 
             <!-- Total Pay -->
