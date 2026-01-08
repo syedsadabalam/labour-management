@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Site Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-semibold mb-1">{{ dashboard.site.site_name }}</h4>
+      <small class="text-muted">Manager: {{ dashboard.manager_name }}</small>
+    </div>
+
+    <a href="{{ url_for('admin_bp.admin_dashboard') }}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Back
+    </a>
+  </div>
+
+
+  <!-- PREVIOUS DAY COMPARISON -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+
+        <h6 class="fw-semibold mb-3">
+          Previous Day Comparison
+          <!--     <small class="text-muted">({{ dashboard.yesterday_date.strftime('%d %b %Y') }})</small>      -->
+        </h6>
+
+        <div class="row text-center">
+
+          <!-- PRESENT -->
+          <div class="col-md-4">
+            <div class="border rounded p-3">
+              <div class="text-muted small mb-1">Present</div>
+
+              <div class="fs-4 fw-semibold">
+                {{ dashboard.present_today }}
+              </div>
+
+              {% set diff = dashboard.yesterday.present_diff %}
+              <div class="small
+                {% if diff > 0 %}text-success
+                {% elif diff < 0 %}text-danger
+                {% else %}text-muted{% endif %}">
+                {% if diff > 0 %}▲ +{{ diff }}
+                {% elif diff < 0 %}▼ {{ diff }}
+                {% else %}— No change{% endif %}
+              </div>
+            </div>
+          </div>
+          
+
+          <!-- SHIFTS -->
+          <div class="col-md-4">
+            <div class="border rounded p-3">
+              <div class="text-muted small mb-1">Shifts</div>
+
+              <div class="fs-4 fw-semibold">
+                {{ dashboard.total_shifts_today }}
+              </div>
+
+              {% set diff = dashboard.yesterday.shift_diff %}
+              <div class="small
+                {% if diff > 0 %}text-success
+                {% elif diff < 0 %}text-danger
+                {% else %}text-muted{% endif %}">
+                {% if diff > 0 %}▲ +{{ diff }}
+                {% elif diff < 0 %}▼ {{ diff }}
+                {% else %}— No change{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- ATTENDANCE % -->
+          <div class="col-md-4">
+            <div class="border rounded p-3">
+              <div class="text-muted small mb-1">Attendance %</div>
+
+              <div class="fs-4 fw-semibold">
+                {{ dashboard.attendance_percent }}%
+              </div>
+
+              {% set diff = dashboard.yesterday.attendance_diff %}
+              <div class="small
+                {% if diff > 0 %}text-success
+                {% elif diff < 0 %}text-danger
+                {% else %}text-muted{% endif %}">
+                {% if diff > 0 %}▲ +{{ diff }}%
+                {% elif diff < 0 %}▼ {{ diff }}%
+                {% else %}— No change{% endif %}
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+          <div class="text-end" >
+            <a href="{{ url_for(
+                'admin_bp.monthly_report',
+                site_id=dashboard.site.id,
+                month=dashboard.yesterday_date.strftime('%Y-%m')
+              ) }}"
+              class="btn btn-primary btn-sm">
+
+              View Monthly Report →
+            </a>
+          </div>
+
+
+      </div>
+    </div>
+
+  <!-- METRICS -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-2">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Total Labours</h6>
+          <h4>{{ dashboard.total_labours }}</h4>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="col-md-2">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Payroll (MTD)</h6>
+          <h4>₹{{ dashboard.payroll_mtd }}</h4>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  
+
+
+  <!-- ABSENT TODAY -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">Absent Today</h6>
+
+      {% if dashboard.absent_today %}
+        <ul class="mb-0">
+          {% for l in dashboard.absent_today %}
+            <li>{{ l.name }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">No absentees today.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- FINANCIAL SNAPSHOT -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">Financial Snapshot</h6>
+
+      <div class="row">
+        <div class="col-md-4">
+          <strong>Payroll MTD</strong><br>
+          ₹{{ dashboard.payroll_mtd }}
+        </div>
+
+        <div class="col-md-4">
+          <strong>Advance MTD</strong><br>
+          ₹{{ dashboard.advances_mtd }}
+        </div>
+
+        <div class="col-md-4">
+          <strong>Advance Ratio</strong><br>
+          {{ dashboard.advance_ratio }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

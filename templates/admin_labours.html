@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Labours{% endblock %}
+{% block page_title %}Labours{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -8,16 +8,12 @@
 
 
   <div class="row mb-3">
-    <div class="col-8">
-      <h4 class="mb-0">Labours</h4>
-      <p class="text-muted small">Manage your labour list</p>
-    </div>
     
-    <div class="col-4 text-end">
-      <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-sm btn-outline-secondary">Sites</a>
-      <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-sm btn-outline-secondary">Managers</a>
-      <a href="{{ url_for('admin_bp.admin_add_payment') }}" class="btn btn-sm btn-primary">Add Advance</a>
-      <a href="{{ url_for('admin_bp.admin_add_labour') }}" class="btn btn-sm btn-success"> Add Labour</a>
+    <div class="col-4">
+      <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-sm btn-outline-primary">Sites</a>
+      <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-sm btn-outline-primary">Managers</a>
+      <a href="{{ url_for('admin_bp.admin_add_payment') }}" class="btn btn-sm btn-outline-primary">Add Advance</a>
+      <a href="{{ url_for('admin_bp.admin_add_labour') }}" class="btn btn-sm btn-outline-primary"> Add Labour</a>
 
     </div>
   </div>
@@ -89,7 +85,12 @@
             <tr>
               <td>{{ loop.index }}</td>
 
-              <td>{{ labour.name or '-' }}</td>
+              <td>
+                <a href="#" class="labour-link"
+                  data-labour-id="{{ labour.id }}">
+                  {{ labour.name }}
+                </a>
+              </td>
 
               <td>{{ labour.phone or '-' }}</td>
 
@@ -150,7 +151,7 @@
     </div>
   </div>
   {% if pagination.pages > 1 %}
-<div class="d-flex justify-content-between align-items-center mt-3">
+  <div class="d-flex justify-content-between align-items-center mt-3">
 
   <small class="text-muted">
     Page {{ pagination.page }} of {{ pagination.pages }}
@@ -180,7 +181,131 @@
 
   </div>
 </div>
+
 {% endif %}
 
+
+  <!-- Labour Monthly Summary Modal -->
+  <div class="modal fade" id="labourSummaryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+
+        <!-- 1️⃣ HEADER : Identity + Month -->
+        <div class="modal-header d-flex justify-content-between">
+          <div class="labour-header">
+            <div class="labour-avatar">👤</div>
+            <div>
+              <div id="ls-name" class="labour-name"></div>
+              <div class="labour-meta">
+                <span id="ls-phone"></span> • <span id="ls-site"></span>
+              </div>
+            </div>
+          </div>
+
+
+          <div>
+           
+            <input type="month"
+            id="month-selector"
+            class="form-control form-control-sm"
+            style="width:160px">
+
+          </div>
+        </div>
+
+        <!-- 2️⃣ BODY -->
+        <div class="modal-body">
+          <div class="row">
+
+            <!-- LEFT SIDE -->
+            <div class="col-md-7">
+
+              <!-- 2️⃣ Attendance Summary -->
+              <div class="card summary-card mb-3">
+                <div class="card-header fw-bold">
+                  Attendance Summary
+                </div>
+                <div class="card-body">
+                  <div>Total Day Shifts: <b id="as-day"></b></div>
+                  <div>Total Night Shifts: <b id="as-night"></b></div>
+                  <div>Total Shifts: <b id="as-total"></b></div>
+                  <div class="text-danger">
+                    Absent Days: <b id="as-absent"></b>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4️⃣ Earnings Summary -->
+              <div class="card summary-card mb-3">
+                <div class="card-header fw-bold">
+                  Earnings
+                </div>
+                <div class="card-body">
+                  <div>Daily Wage: ₹<b id="ps-wage"></b></div>
+                  <div>Total Pay (as worked): ₹<b id="ps-earned"></b></div>
+                </div>
+              </div>
+
+              <!-- 5️⃣ Deductions -->
+              <div class="card summary-card mb-3">
+                <div class="card-header fw-bold">
+                  Deductions
+                </div>
+                <div class="card-body">
+                  <div>Advance Paid: ₹<b id="ps-advance"></b></div>
+                  <div>Mess / Canteen: ₹<b id="ps-expense"></b></div>
+                </div>
+              </div>
+
+              <!-- 6️⃣ Net Payable -->
+              <div class="net-pay">
+                <div class="card-body text-center">
+                  <h5 class="text-success mb-1">Net Payable</h5>
+                  <h3 class="fw-bold">₹<span id="ps-net"></span></h3>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT SIDE -->
+            <div class="col-md-5">
+
+              <!-- 3️⃣ Calendar -->
+              <div class="card">
+                <div class="card-header fw-bold">
+                  Monthly Attendance
+                </div>
+                <div class="card-body">
+                  <div id="attendance-calendar"></div>
+
+                  <div class="mt-2 small">
+                    <span class="badge bg-success">Worked</span>
+                    <span class="badge bg-danger">Absent</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
 </div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/labour-summary.css') }}">
+
+<script src="{{ url_for('static', filename='js/labours.js') }}"></script>
+
 {% endblock %}

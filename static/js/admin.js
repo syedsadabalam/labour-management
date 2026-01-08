@@ -11,16 +11,29 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =============================
      1️⃣ SIDEBAR TOGGLE (Mobile)
   ============================= */
-  const sidebarToggle = document.getElementById("sidebarToggle");
   const sidebar = document.querySelector(".sidebar");
   const mainContent = document.querySelector(".main-content");
 
-  if (sidebarToggle) {
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("collapsed");
-      mainContent.classList.toggle("expanded");
-    });
+  // Desktop (Dashboard Overview ☰ button)
+  const desktopToggle = document.getElementById("sidebarCollapseDesktop");
+
+  // Mobile (if exists)
+  const mobileToggle = document.getElementById("sidebarToggle");
+
+  function toggleSidebar() {
+    if (!sidebar || !mainContent) return;
+    sidebar.classList.toggle("collapsed");
+    mainContent.classList.toggle("expanded");
   }
+
+  if (desktopToggle) {
+    desktopToggle.addEventListener("click", toggleSidebar);
+  }
+
+  if (mobileToggle) {
+    mobileToggle.addEventListener("click", toggleSidebar);
+  }
+
 
  /* =============================
    2️⃣ AUTO HIGHLIGHT ACTIVE LINK (FIXED)
@@ -120,3 +133,5 @@ document.querySelectorAll('.kpi').forEach(k=>{
   k.addEventListener('mouseenter', ()=> k.style.transform='translateY(-6px)');
   k.addEventListener('mouseleave', ()=> k.style.transform='translateY(0)');
 });
+
+

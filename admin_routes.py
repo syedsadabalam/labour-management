@@ -20,6 +20,8 @@ from models import db, Site, Labour, Payment, Attendance, User, LabourMonthlyExp
 from sqlalchemy.exc import IntegrityError
 import re
 
+from services.dashboard_service import get_admin_dashboard_data
+from services.site_dashboard_service import get_admin_site_dashboard
 
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin', template_folder='templates')
@@ -27,6 +29,7 @@ admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin', template_folder=
 
 
 IST = pytz.timezone("Asia/Kolkata")
+
 def to_ist(dt):
     if not dt:
         return None
@@ -61,142 +64,23 @@ def _to_int(v):
     except Exception:
         return None
 
-# dashboard
-# dashboard
+# dashboard-----------------------------------------------------
+
+
 @admin_bp.route('/dashboard')
 @login_required
 def admin_dashboard():
     if current_user.role != 'admin':
         return redirect(url_for('auth.login'))
-        
-    today = date.today()
-    year = today.year
-    month = today.month
 
-    # BASIC COUNTS
-    total_labours = Labour.query.filter_by(is_active=True).count()
-    total_managers = User.query.filter_by(role='manager').count()
-    total_sites = Site.query.count()
-
-    # TODAY PRESENT
-    today_present = (
-        db.session.query(func.count(func.distinct(Attendance.labour_id)))
-        .filter(
-            Attendance.date == today,
-            or_(
-                Attendance.day_shift_flag == True,
-                Attendance.night_shift_flag == True
-            )
-        )
-        .scalar()
-    ) or 0
-
-    # ---------- TOTAL PAYABLE (CURRENT MONTH) ----------
-    per_labour_shifts = (
-        db.session.query(
-            Attendance.labour_id.label('labour_id'),
-            func.sum(
-                case((Attendance.day_shift_flag == True, 1), else_=0) +
-                case((Attendance.night_shift_flag == True, 1), else_=0)
-            ).label('shift_count')
-        )
-        .filter(
-            extract('year', Attendance.date) == year,
-            extract('month', Attendance.date) == month
-        )
-        .group_by(Attendance.labour_id)
-        .subquery()
-    )
-
-    total_payable_amount = (
-        db.session.query(
-            func.coalesce(
-                func.sum(per_labour_shifts.c.shift_count * Labour.daily_wage),
-                0
-            )
-        )
-        .select_from(per_labour_shifts)
-        .join(Labour, Labour.id == per_labour_shifts.c.labour_id)
-        .filter(Labour.is_active == True)
-        .scalar()
-    ) or 0
-
-    # TOTAL ADVANCES (ALL TIME)
-    total_advance = (
-        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
-        .scalar()
-    ) or 0
-
-
-    # -------- TOP LABOURS BY PRESENCE --------
-    top_labours = (
-        db.session.query(
-            Labour.id,
-            Labour.name,
-            func.sum(
-                case((Attendance.day_shift_flag == True, 1), else_=0) +
-                case((Attendance.night_shift_flag == True, 1), else_=0)
-            ).label('days_present')
-        )
-        .join(Attendance, Attendance.labour_id == Labour.id)
-        .group_by(Labour.id)
-        .order_by(desc('days_present'))
-        .limit(10)
-        .all()
-    )
-
-    top_labours = [
-        {'id': l.id, 'name': l.name, 'days_present': int(l.days_present)}
-        for l in top_labours
-    ]
-
-    sites = Site.query.order_by(Site.site_name).all()
-
-
-    
-    # -------- MANAGER ACTIVITY (CORRECT) --------
-    
-    today = date.today()
-
-    site_activity = []
-
-    for s in sites:
-        last_attendance = (
-            db.session.query(func.max(Attendance.date))
-            .filter(Attendance.site_id == s.id)
-            .scalar()
-        )
-
-        if last_attendance == today:
-            status = 'Active'
-        elif last_attendance:
-            status = 'Delayed'
-        else:
-            status = 'Inactive'
-
-        site_activity.append({
-            'site_name': s.site_name,
-            'last_attendance': last_attendance,
-            'status': status
-        })
-
-
-    # -------- ACTIVE SITES --------
-    sites = Site.query.all()
+    dashboard = get_admin_dashboard_data()
 
     return render_template(
-        'admin_dashboard.html',
-        total_labours=total_labours,
-        total_managers=total_managers,
-        total_sites=total_sites,
-        today_present=today_present,
-        total_payable_amount=total_payable_amount,
-        total_advance=total_advance,
-        top_labours=top_labours,
-        site_activity=site_activity,
-        sites=sites
+        "admin_dashboard.html",
+        dashboard=dashboard
     )
 
+######################################################################################
 # Sites
 @admin_bp.route('/sites')
 @login_required
@@ -274,6 +158,22 @@ def toggle_site_status(site_id):
     )
     return redirect(url_for('admin_bp.admin_sites'))
 
+
+@admin_bp.route('/sites/<int:site_id>')
+@login_required
+def admin_site_dashboard(site_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('auth.login'))
+
+    dashboard = get_admin_site_dashboard(site_id)
+
+    if not dashboard:
+        abort(404)
+
+    return render_template(
+        'admin_site_dashboard.html',
+        dashboard=dashboard
+    )
 
 
 # ================== MANAGER ==================
@@ -595,9 +495,9 @@ def admin_add_payment():
             labour_id=_to_int(request.form.get('labour_id')),
             site_id=_to_int(request.form.get('site_id')),
             date=request.form.get('date'),
-            advance=request.form.get('advance'),
+            advance=float(request.form.get('advance') or 0),
             note=request.form.get('note'),
-            created_by=current_user.id if current_user.is_authenticated else None
+            created_by_id=current_user.id if current_user.is_authenticated else None
         )
 
         db.session.add(payment)
@@ -868,6 +768,7 @@ def monthly_report():
     sites = Site.query.order_by(Site.site_name.asc()).all()
     rows = []
     grand_total = Decimal('0.00')
+    
 
     if site_id and month:
         start_date = datetime.strptime(month + '-01', '%Y-%m-%d').date()
@@ -1335,3 +1236,204 @@ def archive_audit_now():
 
     flash(f'{count} audit logs archived successfully.', 'success')
     return redirect(url_for('admin_bp.admin_audit_logs'))
+
+
+#------------LABOUR SUMMAY MODAL-------------
+
+@admin_bp.route('/api/labour/<int:labour_id>/monthly-summary')
+@login_required
+def labour_monthly_summary(labour_id):
+
+    month = request.args.get('month')  # YYYY-MM
+    if not month:
+        return jsonify({"error": "Month is required"}), 400
+
+    # ---- Parse month ----
+    try:
+        year, mon = map(int, month.split('-'))
+        start_date = date(year, mon, 1)
+        if mon == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, mon + 1, 1)
+    except Exception:
+        return jsonify({"error": "Invalid month format"}), 400
+
+    # ---- Labour ----
+    labour = Labour.query.get_or_404(labour_id)
+
+    # ---- Attendance ----
+    attendance_rows = Attendance.query.filter(
+        Attendance.labour_id == labour_id,
+        Attendance.date >= start_date,
+        Attendance.date < end_date
+    ).order_by(Attendance.date).all()
+
+    day_shifts = 0
+    night_shifts = 0
+    absent_days = 0
+    calendar = []
+
+    for r in attendance_rows:
+        worked = False
+
+        if r.day_shift_flag:
+            day_shifts += 1
+            worked = True
+
+        if r.night_shift_flag:
+            night_shifts += 1
+            worked = True
+
+        if not worked:
+            absent_days += 1
+
+        calendar.append({
+            "date": r.date.isoformat(),
+            "day": int(r.day_shift_flag),
+            "night": int(r.night_shift_flag),
+            "status": "ABSENT" if not worked else "PRESENT"
+        })
+
+    total_shifts = day_shifts + night_shifts
+
+    # ---- Earnings ----
+    daily_wage = float(labour.daily_wage or 0)
+    earned_pay = daily_wage * total_shifts
+
+    # ---- Advances (up to month end) ----
+    advance_paid = (
+        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
+        .filter(
+            Payment.labour_id == labour_id,
+            Payment.date < end_date
+        )
+        .scalar()
+    ) or 0
+
+    # ---- Monthly expenses ----
+    expense = LabourMonthlyExpenses.query.filter_by(
+        labour_id=labour_id,
+        site_id=labour.site_id,
+        month=month
+    ).first()
+
+    mess = float(expense.mess_amount) if expense else 0
+    canteen = float(expense.canteen_amount) if expense else 0
+    total_expense = mess + canteen
+
+    # ---- Net payable ----
+    net_payable = earned_pay - advance_paid - total_expense
+
+    # ---- Final JSON ----
+    return jsonify({
+        "labour": {
+            "name": labour.name,
+            "phone": labour.phone,
+            "site": labour.site.site_name if labour.site else "-"
+        },
+        "attendance_summary": {
+            "day_shifts": day_shifts,
+            "night_shifts": night_shifts,
+            "total_shifts": total_shifts,
+            "absent_days": absent_days
+        },
+        "payment_summary": {
+            "daily_wage": daily_wage,
+            "earned_pay": earned_pay,
+            "advance_paid": advance_paid,
+            "mess_canteen": total_expense,
+            "net_payable": net_payable
+        },
+        "calendar": calendar
+    })
+
+#-------------------VIEW MONTHLY ATTANDANCE---------------
+
+@admin_bp.route("/sites/<int:site_id>/monthly-attendance")
+@login_required
+def admin_monthly_attendance(site_id):
+
+    if current_user.role != "admin":
+        return redirect(url_for("auth.login"))
+
+    # --- Get site ---
+    site = Site.query.get_or_404(site_id)
+
+    # --- Month & year (default = current month) ---
+    today = date.today()
+    month = request.args.get("month", today.month, type=int)
+    year = request.args.get("year", today.year, type=int)
+
+    start_date = date(year, month, 1)
+    if month == 12:
+        end_date = date(year + 1, 1, 1)
+    else:
+        end_date = date(year, month + 1, 1)
+
+    # --- Daily attendance stats (SAME LOGIC AS MANAGER) ---
+    daily_stats = []
+
+    day = start_date
+    while day < end_date:
+        present = (
+            db.session.query(func.count(func.distinct(Attendance.labour_id)))
+            .filter(
+                Attendance.site_id == site_id,
+                Attendance.date == day,
+                or_(
+                    Attendance.day_shift_flag.is_(True),
+                    Attendance.night_shift_flag.is_(True)
+                )
+            )
+            .scalar()
+        ) or 0
+
+        total_labours = (
+            Labour.query
+            .filter(
+                Labour.site_id == site_id,
+                Labour.is_active.is_(True)
+            )
+            .count()
+        )
+
+        absent = max(total_labours - present, 0)
+
+        day_shift = (
+            db.session.query(func.count())
+            .filter(
+                Attendance.site_id == site_id,
+                Attendance.date == day,
+                Attendance.day_shift_flag.is_(True)
+            )
+            .scalar()
+        ) or 0
+
+        night_shift = (
+            db.session.query(func.count())
+            .filter(
+                Attendance.site_id == site_id,
+                Attendance.date == day,
+                Attendance.night_shift_flag.is_(True)
+            )
+            .scalar()
+        ) or 0
+
+        daily_stats.append({
+            "date": day,
+            "present": present,
+            "absent": absent,
+            "day": day_shift,
+            "night": night_shift
+        })
+
+        day += timedelta(days=1)
+
+    return render_template(
+        "admin_monthly_attendance.html",
+        site=site,
+        month=month,
+        year=year,
+        daily_stats=daily_stats
+    )

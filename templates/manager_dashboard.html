@@ -86,10 +86,8 @@
     <div class="col-md-6">
       <div class="card border-0 shadow-sm">
         <div class="card-body">
-          <h6 class="fw-semibold mb-2">Advance Activity</h6>
-          <p class="mb-0 text-muted">
-            ₹ {{ advances_today }} advanced today
-          </p>
+          <div class="text-muted small">Today's Advances</div>
+              <h4 class="mb-0">₹ {{ advances_today }}</h4>
         </div>
       </div>
     </div>
@@ -105,43 +103,132 @@
         <a href="{{ url_for('manager_bp.mark_attendance') }}" class="btn btn-outline-success">Mark Attendance</a>
         <a href="{{ url_for('manager_bp.add_payment') }}" class="btn btn-outline-warning">Add Advance</a>
         <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-info">Advance History</a>
+        <a href="{{ url_for('manager_bp.manager_monthly_attendance') }}" class="btn btn-outline-primary">View Monthly Attendance</a>
       </div>
     </div>
   </div>
 
+
+  <!-- Absent Labour Name -->
+  
+  {% if yesterday_absent_count > 0 %}
+  <div class="card border-warning mb-4">
+    <div class="card-body">
+
+      <div class="accordion" id="yesterdayAbsentAccordion">
+        <div class="accordion-item border-0">
+          <h2 class="accordion-header" id="headingAbsent">
+            <button class="accordion-button collapsed bg-transparent px-0 text-warning"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseAbsent"
+                    aria-expanded="false"
+                    aria-controls="collapseAbsent">
+
+              ({{ yesterday_date.strftime('%d %b %Y') }}) Absent Yesterday
+              <span class="badge rounded-pill bg-danger ms-2">
+                {{ yesterday_absent_count }}
+              </span>
+
+            </button>
+          </h2>
+
+          <div id="collapseAbsent"
+              class="accordion-collapse collapse"
+              aria-labelledby="headingAbsent"
+              data-bs-parent="#yesterdayAbsentAccordion">
+
+            <div class="accordion-body px-0 pt-2">
+              <ul class="mb-2">
+                {% for l in yesterday_absent %}
+                  <li>{{ l.name }}</li>
+                {% endfor %}
+              </ul>
+
+              <small class="text-muted">
+                These labours did not work any shift yesterday.
+              </small>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
+
   <!-- RECENT ACTIVITY -->
   <div class="card border-0 shadow-sm">
     <div class="card-body">
-      <h6 class="fw-semibold mb-3">Recent Activity</h6>
 
-      {% if recent_attendance or recent_payments %}
-        <ul class="list-group list-group-flush">
+      <div class="accordion" id="recentActivityAccordion">
+        <div class="accordion-item border-0">
 
-          {% for a in recent_attendance %}
-            <li class="list-group-item d-flex justify-content-between">
-              <span>
-                {{ a.labour.name }} marked
-                {{ 'Present' if a.day_shift_flag else 'Absent' }}
-              </span>
-              <small class="text-muted">{{ a.date.strftime('%d-%m-%Y') }}</small>
-            </li>
-          {% endfor %}
+          <h2 class="accordion-header" id="headingRecent">
+            <button class="accordion-button collapsed bg-transparent px-0 fw-semibold"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseRecent"
+                    aria-expanded="false"
+                    aria-controls="collapseRecent">
+              Recent Activity
+            </button>
+          </h2>
 
-          {% for p in recent_payments %}
-            <li class="list-group-item d-flex justify-content-between">
-              <span>
-                ₹{{ p.advance }} advance → {{ p.labour.name }}
-              </span>
-              <small class="text-muted">{{ p.date.strftime('%d-%m-%Y') }}</small>
-            </li>
-          {% endfor %}
+          <div id="collapseRecent"
+              class="accordion-collapse collapse"
+              aria-labelledby="headingRecent"
+              data-bs-parent="#recentActivityAccordion">
 
-        </ul>
-      {% else %}
-        <p class="text-muted mb-0">No recent activity.</p>
-      {% endif %}
+            <div class="accordion-body px-0 pt-2">
+
+              {% if recent_attendance or recent_payments %}
+                <ul class="list-group list-group-flush">
+
+                  {% for a in recent_attendance %}
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>
+                        {{ a.labour.name }}
+                        {% if a.day_shift_flag or a.night_shift_flag %}
+                          marked <strong>Present</strong>
+                        {% else %}
+                          marked <strong>Absent</strong>
+                        {% endif %}
+                      </span>
+                      <small class="text-muted">
+                        {{ a.date.strftime('%d-%m-%Y') }}
+                      </small>
+                    </li>
+                  {% endfor %}
+
+                  {% for p in recent_payments %}
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>
+                        ₹{{ p.advance }} advance → {{ p.labour.name }}
+                      </span>
+                      <small class="text-muted">
+                        {{ p.date.strftime('%d-%m-%Y') }}
+                      </small>
+                    </li>
+                  {% endfor %}
+
+                </ul>
+              {% else %}
+                <p class="text-muted mb-0">No recent activity.</p>
+              {% endif %}
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
+
+
 
 </div>
 {% endblock %}

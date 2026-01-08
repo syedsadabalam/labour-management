@@ -148,3 +148,11 @@ tfoot tr { background: #f8fafc; font-weight:700; }
    ----------------------- */
 .text-muted { color: var(--muted) !important; }
 .small { font-size: 13px; }
+
+.admin-action-bar {
+  position: sticky;
+  top: 64px;
+  z-index: 100;
+  background: #fff;
+}
+

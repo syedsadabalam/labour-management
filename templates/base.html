@@ -31,7 +31,9 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="admin-layout">
+<body class="admin-layout"
+      data-api-base="{{ request.path.split('/')[1] }}">
+
 
 
 
@@ -148,7 +150,7 @@
 
     <!-- FOOTER -->
     <footer class="footer border-top text-muted small p-3 text-center bg-white">
-      Labour System • Managed by {{ current_user.username if current_user.is_authenticated else 'Admin' }}
+      Labour System By Syed Sadab Alam • Managed by {{ current_user.username if current_user.is_authenticated else 'Admin' }}
     </footer>
   </main>
 

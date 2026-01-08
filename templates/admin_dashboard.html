@@ -1,123 +1,244 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container-fluid mt-4">
 
-<!-- HEADER -->
-<div class="d-flex justify-content-between align-items-start mb-4">
-  <div>
-    <h2 class="mb-1">Welcome back, {{ current_user.username }} 👋</h2>
-    <p class="text-muted">System overview & operational health</p>
-  </div>
-  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">Logout</a>
-</div>
+ <!-- ADMIN ACTION BAR -->
+        <div class="card shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2">
 
-<!-- PRIMARY STATS -->
-<div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="stat-card p-3">
-      <div class="stat-title">Total Labour</div>
-      <div class="stat-value">{{ total_labours }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="stat-card p-3">
-      <div class="stat-title">Managers</div>
-      <div class="stat-value">{{ total_managers }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="stat-card p-3">
-      <div class="stat-title">Sites</div>
-      <div class="stat-value">{{ total_sites }}</div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="stat-card p-3">
-      <div class="stat-title">Attendance Today</div>
-      <div class="stat-value">{{ today_present }} / {{ total_labours }}</div>
-    </div>
-  </div>
-</div>
+            <a href="{{ url_for('admin_bp.admin_sites') }}"
+                class="btn btn-sm btn-outline-primary">
+                🏗 Sites
+            </a>
 
-<!-- FINANCIAL SUMMARY -->
-<div class="row g-3 mb-4">
-  <div class="col-md-6">
-    <div class="card p-3">
-      <div class="text-muted">Total Payable</div>
-      <div class="fs-3 fw-bold">₹{{ "%.2f"|format(total_payable_amount) }}</div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card p-3">
-      <div class="text-muted">Total Advances</div>
-      <div class="fs-3 fw-bold text-danger">₹{{ "%.2f"|format(total_advance) }}</div>
-    </div>
-  </div>
-</div>
+            <a href="{{ url_for('admin_bp.admin_managers') }}"
+                class="btn btn-sm btn-outline-success">
+                👤 Managers
+            </a>
 
-<!-- QUICK ACTIONS -->
-<div class="card mb-4">
-  <div class="card-body d-flex flex-wrap gap-2">
-    <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-outline-primary">Sites</a>
-    <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-success">Managers</a>
-    <a href="{{ url_for('admin_bp.monthly_report') }}" class="btn btn-outline-info">Monthly Reports</a>
-    <a href="{{ url_for('admin_bp.attendance_report') }}" class="btn btn-outline-secondary">Attendance Report</a>
-    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="btn btn-outline-success">Salary Sheet</a>
-    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="btn btn-outline-dark">Activity Logs</a>
-  </div>
-</div>
+            <a href="{{ url_for('admin_bp.monthly_report') }}"
+                class="btn btn-sm btn-outline-info">
+                📊 Monthly Reports
+            </a>
 
-<!-- MANAGER ACTIVITY -->
-<div class="card rounded-lg mb-4">
-  <div class="card-body">
-    <h5 class="mb-3">Site Attendance Activity (Today)</h5>
+            <a href="{{ url_for('admin_bp.attendance_report') }}"
+                class="btn btn-sm btn-outline-secondary">
+                🕒 Attendance Report
+            </a>
 
-    <table class="table table-sm align-middle">
-      <thead>
-        <tr>
-          <th>Site</th>
-          <th>Last Attendance</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in site_activity %}
-        <tr>
-          <td>{{ a.site_name }}</td>
-          <td>{{ a.last_attendance or '-' }}</td>
-          <td>
-            {% if a.status == 'Active' %}
-              <span class="badge bg-success">Active</span>
-            {% elif a.status == 'Delayed' %}
-              <span class="badge bg-warning text-dark">Delayed</span>
-            {% else %}
-              <span class="badge bg-danger">Inactive</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+            <a href="{{ url_for('admin_bp.labour_salary_sheet') }}"
+                class="btn btn-sm btn-outline-success">
+                💰 Salary Sheet
+            </a>
 
+            <a href="{{ url_for('admin_bp.admin_audit_logs') }}"
+                class="btn btn-sm btn-outline-dark">
+                🧾 Activity Logs
+            </a>
 
-<!-- TOP LABOURS -->
-<div class="card mb-5">
-  <div class="card-body">
-    <h5>Top Labours by Presence</h5>
-    {% if top_labours %}
-      {% for l in top_labours %}
-        <div class="d-flex justify-content-between border-bottom py-2">
-          <strong>{{ l.name }}</strong>
-          <span>{{ l.days_present }} shifts</span>
+            </div>
         </div>
-      {% endfor %}
+        </div>
+
+<div class="container-fluid mt-3">
+
+
+  <!-- ================= TOP SYSTEM STATUS BAR ================= -->
+  <div class="card mb-3 p-2 px-3 d-flex flex-row justify-content-between align-items-center">
+    <div class="fw-semibold">
+      🔥 Attendance {{ dashboard.system_status.attendance_percent }}%
+      &nbsp; | &nbsp;
+      Sites Active {{ dashboard.system_status.active_sites }}/{{ dashboard.system_status.total_sites }}
+      &nbsp; | &nbsp;
+      Payroll {{ dashboard.system_status.payroll_state }}
+    </div>
+
+    {% if dashboard.system_status.alerts > 0 %}
+      <span class="badge bg-danger">{{ dashboard.system_status.alerts }} Alerts</span>
     {% else %}
-      <p class="text-muted">No attendance data</p>
+      <span class="badge bg-success">No Alerts</span>
     {% endif %}
   </div>
-</div>
+
+  <!-- ================= KPI ROW ================= -->
+  <div class="row g-3 mb-4">
+
+
+    <div class="col-md-3">
+      <div class="card p-3 text-center">
+        <div class="text-muted small">Attendance Today</div>
+        <h4 class="mb-0">{{ dashboard.system_status.attendance_percent }}%</h4>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card p-3 text-center">
+        <div class="text-muted small">Active Sites</div>
+        <h4 class="mb-0">
+          {{ dashboard.system_status.active_sites }} / {{ dashboard.system_status.total_sites }}
+        </h4>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card p-3 text-center">
+        <div class="text-muted small">Payroll Exposure (MTD)</div>
+        <h4 class="mb-0">₹{{ dashboard.financial_risk.payroll_mtd }}</h4>
+        <small class="text-muted">Advances {{ dashboard.financial_risk.ratio }}%</small>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card p-3 text-center">
+        <div class="text-muted small">Critical Alerts</div>
+        <h4 class="mb-0 text-danger">{{ dashboard.system_status.alerts }}</h4>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= MAIN GRID ================= -->
+  <div class="row g-4">
+
+    <!-- ================= LEFT COLUMN ================= -->
+    <div class="col-lg-9">
+
+      <!-- ACTION REQUIRED -->
+      {% if dashboard.system_status.alerts > 0 %}
+      <div class="card border-danger mb-4">
+        <div class="card-body">
+          <h6 class="text-danger mb-3">🚨 ACTION REQUIRED TODAY</h6>
+          <ul class="mb-0">
+            {% for site in dashboard.sites %}
+              {% for alert in site.alerts %}
+                <li><strong>{{ site.site_name }}</strong> — {{ alert }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- SITE OVERVIEW -->
+      <h5 class="mb-3">Site Overview</h5>
+      <div class="row g-3">
+
+        {% for site in dashboard.sites %}
+        <div class="col-md-4">
+          <div class="card h-100">
+
+            <div class="card-body">
+
+              <!-- Header -->
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>{{ site.site_name }}</strong>
+
+                {% if site.total_labours == 0 %}
+                  <span class="badge bg-secondary">INACTIVE</span>
+                {% elif site.status == 'CRITICAL' %}
+                  <span class="badge bg-danger">❌Attendance</span>
+                {% elif site.status == 'DELAYED' %}
+                  <span class="badge bg-warning text-dark"> ⚠️Attendance Late</span>
+                {% else %}
+                  <span class="badge bg-success">✅Attendance</span>
+                {% endif %}
+              </div>
+
+              <div class="text-muted small mb-2">
+                Manager: {{ site.manager_name }}
+              </div>
+
+              <!-- Attendance -->
+              <div class="fw-semibold mb-1">
+                Attendance:
+                {{ site.present_today }} / {{ site.total_labours }}
+                ({{ site.attendance_percent }}%)
+              </div>
+
+              <!-- Payroll -->
+              <div class="small text-muted mb-2">
+                Payroll (MTD): ₹{{ site.payroll_mtd }} <br>
+                Advances: ₹{{ site.total_advance }} ({{ site.advance_ratio }}%)
+              </div>
+
+              <!-- Alerts -->
+              {% if site.alerts %}
+              <ul class="small text-danger ps-3 mb-2">
+                {% for a in site.alerts %}
+                  <li>{{ a }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+
+              <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.site_id) }}" class="btn btn-sm btn-light w-100">View Site</a>
+              <a href="{{ url_for('admin_bp.admin_monthly_attendance', site_id=site.site_id ) }}" class="btn btn-sm btn-light w-100">Monthly Attendance</a>
+
+
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>
+
+    </div>
+
+    <!-- ================= RIGHT COLUMN ================= -->
+    <div class="col-lg-3">
+
+      <!-- FINANCIAL RISK -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6>Financial Risk</h6>
+          <ul class="small mb-0">
+            <li>Advance / Payroll: {{ dashboard.financial_risk.ratio }}%</li>
+            <li><strong>Total Payroll (MTD): ₹{{ dashboard.financial_risk.payroll_mtd }}</strong></li>
+            <li><strong>Total Advances: ₹{{ dashboard.financial_risk.advances }}</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE EXCEPTIONS -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6>Attendance Exceptions</h6>
+          <ul class="small mb-0">
+            {% if dashboard.attendance_exceptions %}
+              {% for e in dashboard.attendance_exceptions %}
+                <li>{{ e.site_name }} – {{ e.attendance_percent }}%</li>
+              {% endfor %}
+            {% else %}
+              <li>No attendance exceptions</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- MANAGERS -->
+      <div class="card">
+        <div class="card-body">
+          <h6>Managers</h6>
+          <ul class="small mb-0">
+            {% for m in dashboard.managers %}
+              <li>
+                {{ m.manager }} ({{ m.site }}) –
+                {% if m.status == 'Healthy' %}
+                  🟢 Attendance Marked
+                {% elif m.status == 'Delayed' %}
+                  🟡 Attendance Late
+                {% else %}
+                  🔴 Attendance NOT Marked
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+
 {% endblock %}

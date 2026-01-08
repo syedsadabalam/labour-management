@@ -5,8 +5,13 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from datetime import datetime, date
 from sqlalchemy import or_
-
+from datetime import date, timedelta
+from sqlalchemy import and_, or_
 from models import db, Site, Labour, Attendance, Payment, log_event
+
+from calendar import monthrange
+from sqlalchemy import func, case
+
 
 manager_bp = Blueprint('manager_bp', __name__, url_prefix='/manager', template_folder='templates')
 
@@ -131,6 +136,52 @@ def manager_dashboard():
         .all()
     )
 
+    
+
+    yesterday = date.today() - timedelta(days=1)
+
+    # All active labours for this manager's site
+    active_labours = Labour.query.filter_by(
+        site_id=current_user.site_id,
+        is_active=True
+    ).all()
+
+    # Attendance for yesterday (mapped by labour_id)
+    attendance_yesterday = {
+        a.labour_id: a
+        for a in Attendance.query.filter(
+            Attendance.site_id == current_user.site_id,
+            Attendance.date == yesterday
+        ).all()
+    }
+
+    yesterday_absent = []
+
+    for labour in active_labours:
+        att = attendance_yesterday.get(labour.id)
+
+        # ABSENT if no record OR both shifts false
+        if not att or (not att.day_shift_flag and not att.night_shift_flag):
+            yesterday_absent.append({
+                "id": labour.id,
+                "name": labour.name
+            })
+
+    
+
+    today = date.today()
+
+    advances_today = (
+        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
+        .filter(
+            Payment.site_id == current_user.site_id,
+            Payment.date == today
+        )
+        .scalar()
+    ) or 0
+
+
+
     return render_template(
         'manager_dashboard.html',
         total_labours=total_labours,
@@ -139,7 +190,12 @@ def manager_dashboard():
         advances_month=advances_month,
         attendance_marked=attendance_marked,
         recent_attendance=recent_attendance,
-        recent_payments=recent_payments
+        recent_payments=recent_payments,
+        yesterday_absent=yesterday_absent,
+        yesterday_absent_count=len(yesterday_absent),
+        yesterday_date=yesterday,
+        advances_today=advances_today
+
     )
 
 
@@ -292,6 +348,77 @@ def mark_attendance():
         today=date.today().isoformat()
     )
 
+
+
+
+@manager_bp.route('/attendance/monthly')
+@login_required
+def manager_monthly_attendance():
+    if current_user.role != 'manager':
+        return redirect(url_for('auth.login'))
+
+    # Month selection (default: current month)
+    year = request.args.get('year', date.today().year, type=int)
+    month = request.args.get('month', date.today().month, type=int)
+
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
+
+    # Total active labours at this site
+    total_labours = Labour.query.filter_by(
+        site_id=current_user.site_id,
+        is_active=True
+    ).count()
+
+    # Date-wise aggregation
+    rows = (
+        db.session.query(
+            Attendance.date.label('date'),
+            func.sum(case((Attendance.day_shift_flag == True, 1), else_=0)).label('day_count'),
+            func.sum(case((Attendance.night_shift_flag == True, 1), else_=0)).label('night_count')
+        )
+        .filter(
+            Attendance.site_id == current_user.site_id,
+            Attendance.date >= start_date,
+            Attendance.date <= end_date
+        )
+        .group_by(Attendance.date)
+        .order_by(Attendance.date)
+        .all()
+    )
+
+    attendance_map = {r.date: r for r in rows}
+
+    daily_stats = []
+
+    for d in range(1, end_date.day + 1):
+        current_date = date(year, month, d)
+        r = attendance_map.get(current_date)
+
+        day = int(r.day_count) if r else 0
+        night = int(r.night_count) if r else 0
+        present = day + night
+        absent = max(total_labours - present, 0)
+
+        daily_stats.append({
+            "date": current_date,
+            "present": present,
+            "absent": absent,
+            "day": day,
+            "night": night
+        })
+
+    return render_template(
+        'manager_monthly_attendance.html',
+        daily_stats=daily_stats,
+        total_labours=total_labours,
+        year=year,
+        month=month
+    )
+
+
+
+
 @manager_bp.route('/payments/add', methods=['GET', 'POST'])
 @login_required
 def add_payment():
@@ -391,3 +518,113 @@ def payment_history():
         'manager_payment_history.html',
         payments=payments
     )
+
+
+# =========================================================
+# MANAGER – LABOUR MONTHLY SUMMARY (READ ONLY)
+# =========================================================
+
+from flask import jsonify
+
+@manager_bp.route('/api/labour/<int:labour_id>/monthly-summary')
+@login_required
+def manager_labour_monthly_summary(labour_id):
+
+    # ---- Role check ----
+    if not _manager_required():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    month = request.args.get('month')  # YYYY-MM
+    if not month:
+        return jsonify({"error": "Month is required"}), 400
+
+    # ---- Parse month ----
+    try:
+        year, mon = map(int, month.split('-'))
+        start_date = date(year, mon, 1)
+        if mon == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, mon + 1, 1)
+    except Exception:
+        return jsonify({"error": "Invalid month"}), 400
+
+    # ---- Labour (STRICT site filter) ----
+    labour = Labour.query.filter_by(
+        id=labour_id,
+        site_id=current_user.site_id
+    ).first_or_404()
+
+    # ---- Attendance ----
+    attendance_rows = Attendance.query.filter(
+        Attendance.labour_id == labour_id,
+        Attendance.site_id == current_user.site_id,
+        Attendance.date >= start_date,
+        Attendance.date < end_date
+    ).order_by(Attendance.date).all()
+
+    day_shifts = 0
+    night_shifts = 0
+    absent_days = 0
+    calendar = []
+
+    for r in attendance_rows:
+        worked = False
+
+        if r.day_shift_flag:
+            day_shifts += 1
+            worked = True
+
+        if r.night_shift_flag:
+            night_shifts += 1
+            worked = True
+
+        if not worked:
+            absent_days += 1
+
+        calendar.append({
+            "date": r.date.isoformat(),
+            "status": "PRESENT" if worked else "ABSENT"
+        })
+
+    total_shifts = day_shifts + night_shifts
+
+    # ---- Earnings (read-only) ----
+    daily_wage = float(labour.daily_wage or 0)
+    earned_pay = daily_wage * total_shifts
+
+    # ---- Advances (read-only) ----
+    advance_paid = (
+        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
+        .filter(
+            Payment.labour_id == labour_id,
+            Payment.site_id == current_user.site_id,
+            Payment.date < end_date
+        )
+        .scalar()
+    ) or 0
+
+    # ---- Net payable ----
+    net_payable = earned_pay - advance_paid
+
+    return jsonify({
+        "labour": {
+            "name": labour.name,
+            "phone": labour.phone,
+            "site": labour.site.site_name if labour.site else "-"
+        },
+        "attendance_summary": {
+            "day_shifts": day_shifts,
+            "night_shifts": night_shifts,
+            "total_shifts": total_shifts,
+            "absent_days": absent_days
+        },
+        "payment_summary": {
+            "daily_wage": daily_wage,
+            "earned_pay": earned_pay,
+            "advance_paid": advance_paid,
+            "mess_canteen": 0,          # managers don’t manage this
+            "net_payable": net_payable
+        },
+        "calendar": calendar
+    })

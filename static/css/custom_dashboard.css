@@ -34,3 +34,9 @@
 
 .table thead.table-light th { border-top:0; }
 .table tbody tr td { vertical-align: middle; }
+
+.card {
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(20,30,60,0.06);
+}
+
