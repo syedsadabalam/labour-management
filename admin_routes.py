@@ -19,9 +19,20 @@ from sqlalchemy import extract
 from models import db, Site, Labour, Payment, Attendance, User, LabourMonthlyExpenses, log_event, AuditLog
 from sqlalchemy.exc import IntegrityError
 import re
+from services.image_service import save_and_compress_image
 
 from services.dashboard_service import get_admin_dashboard_data
 from services.site_dashboard_service import get_admin_site_dashboard
+
+import os
+from PIL import Image
+from werkzeug.utils import secure_filename
+
+
+
+MAX_FILE_SIZE = 1 * 1024 * 1024   # 1 MB per file
+MAX_WIDTH = 1200                 # resize width
+JPEG_QUALITY = 75                # compression quality
 
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin', template_folder='templates')
@@ -51,7 +62,7 @@ def log_action(action, details=None, site_id=None):
 
 
 
-# helpers
+# --------------------------------------ALL HELPERS------------------------------
 def _admin_required():
     if not current_user.is_authenticated or getattr(current_user, 'role', None) != 'admin':
         flash('Unauthorized', 'danger')
@@ -63,6 +74,101 @@ def _to_int(v):
         return int(v)
     except Exception:
         return None
+
+def save_and_compress_image(file, labour_id, filename):
+    if not file or not file.filename:
+        return None
+
+    # ---- HARD SIZE CHECK (1 MB) ----
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+
+    if size > MAX_FILE_SIZE:
+        raise ValueError("File size must be less than 1 MB")
+
+    # ---- Create upload directory ----
+    upload_dir = os.path.join(
+        current_app.root_path,
+        'static', 'uploads', 'labours', str(labour_id)
+    )
+    os.makedirs(upload_dir, exist_ok=True)
+
+    safe_name = secure_filename(filename)
+    full_path = os.path.join(upload_dir, safe_name)
+
+    # ---- Image processing ----
+    img = Image.open(file)
+
+    # Convert PNG / RGBA to RGB
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    # Resize if too wide
+    if img.width > MAX_WIDTH:
+        ratio = MAX_WIDTH / img.width
+        img = img.resize(
+            (MAX_WIDTH, int(img.height * ratio)),
+            Image.LANCZOS
+        )
+
+    # Save as optimized JPEG
+    img.save(
+        full_path,
+        format="JPEG",
+        quality=JPEG_QUALITY,
+        optimize=True
+    )
+
+    return f"uploads/labours/{labour_id}/{safe_name}"
+
+#----------archive_audit_logs(days=180)---------------------------
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from models import AuditLog, AuditLogArchive
+
+
+def archive_audit_logs_keep_last_3_months():
+    now = datetime.utcnow()
+
+    # First day of current month
+    first_day_current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Keep current + last 2 months → archive older than this
+    cutoff = first_day_current_month - relativedelta(months=2)
+
+    old_logs = AuditLog.query.filter(
+        AuditLog.created_at < cutoff
+    ).all()
+
+    if not old_logs:
+        return 0
+
+    for log in old_logs:
+        archived = AuditLogArchive(
+            user_id=log.user_id,
+            username=log.username,
+            role=log.role,
+            site_id=log.site_id,
+            action=log.action,
+            details=log.details,
+            ip_address=log.ip_address,
+            created_at=log.created_at
+        )
+        db.session.add(archived)
+        db.session.delete(log)
+
+    db.session.commit()
+    return len(old_logs)
+
+
+from flask import send_from_directory
+
+@admin_bp.route('/uploads/<path:filename>')
+@login_required
+def uploaded_file(filename):
+    return send_from_directory('uploads', filename)
+
 
 # dashboard-----------------------------------------------------
 
@@ -245,7 +351,7 @@ def delete_manager(manager_id):
 
 
 
-# Labours
+# -------------------Labours------------------------
 @admin_bp.route('/labours')
 @login_required
 def admin_labours():
@@ -262,7 +368,8 @@ def admin_labours():
         query = query.filter(
             or_(
                 Labour.name.ilike(f"%{search}%"),
-                Labour.phone.ilike(f"%{search}%")
+                Labour.phone.ilike(f"%{search}%"),
+                func.coalesce(Labour.gate_pass_id, '').ilike(f"%{search}%")
             )
         )
 
@@ -298,10 +405,10 @@ def admin_add_labour():
     sites = Site.query.all()
 
     if request.method == 'POST':
-        phone = request.form.get('phone')
+        phone = request.form.get('phone', '').strip()
         site_id = _to_int(request.form.get('site_id'))
 
-        # ---- DUPLICATE CHECK (USER FRIENDLY) ----
+        # ---- DUPLICATE CHECK ----
         existing = Labour.query.filter_by(
             phone=phone,
             site_id=site_id,
@@ -316,6 +423,7 @@ def admin_add_labour():
             return redirect(url_for('admin_bp.admin_add_labour'))
 
         labour = Labour(
+            gate_pass_id=request.form.get('gate_pass_id') or None,
             name=request.form.get('name'),
             phone=phone,
             bank_account=request.form.get('bank_account'),
@@ -327,7 +435,7 @@ def admin_add_labour():
 
         try:
             db.session.add(labour)
-            db.session.commit()
+            db.session.commit()  # MUST commit first to get labour.id
         except IntegrityError:
             db.session.rollback()
             flash(
@@ -335,6 +443,49 @@ def admin_add_labour():
                 'danger'
             )
             return redirect(url_for('admin_bp.admin_add_labour'))
+
+        # ---- FILE UPLOADS (WITH ROLLBACK) ----
+        try:
+            photo = request.files.get('photo')
+            aadhaar_front = request.files.get('aadhaar_front')
+            aadhaar_back = request.files.get('aadhaar_back')
+            gate_pass_front = request.files.get('gate_pass_front')
+            gate_pass_back = request.files.get('gate_pass_back')
+
+            if photo:
+                labour.photo_path = save_and_compress_image(
+                    photo, labour.id, 'photo.jpg'
+                )
+
+            if aadhaar_front:
+                labour.aadhaar_front_path = save_and_compress_image(
+                    aadhaar_front, labour.id, 'aadhaar_front.jpg'
+                )
+
+            if aadhaar_back:
+                labour.aadhaar_back_path = save_and_compress_image(
+                    aadhaar_back, labour.id, 'aadhaar_back.jpg'
+                )
+
+            if gate_pass_front:
+                labour.gate_pass_front_path = save_and_compress_image(
+                    gate_pass_front, labour.id, 'gate_pass_front.jpg'
+                )
+
+            if gate_pass_back:
+                labour.gate_pass_back_path = save_and_compress_image(
+                    gate_pass_back, labour.id, 'gate_pass_back.jpg'
+                )
+
+            db.session.commit()
+
+        except ValueError as e:
+            # rollback fully (NO orphan labour)
+            db.session.delete(labour)
+            db.session.commit()
+            flash(str(e), 'danger')
+            return redirect(url_for('admin_bp.admin_add_labour'))
+
 
         # ---- AUDIT LOG ----
         log_action(
@@ -359,6 +510,8 @@ def admin_edit_labour(labour_id):
     sites = Site.query.all()
 
     if request.method == 'POST':
+
+        gate_pass_id = request.form.get('gate_pass_id', '').strip()
         name = request.form.get('name', '').strip()
         phone = request.form.get('phone', '').strip()
         bank_account = request.form.get('bank_account', '').strip()
@@ -367,16 +520,16 @@ def admin_edit_labour(labour_id):
         daily_wage = request.form.get('daily_wage') or None
         is_active = bool(request.form.get('is_active'))
 
-        # Phone validation
+        # ---- VALIDATIONS ----
         if phone and not re.fullmatch(r"\d{10}", phone):
             flash("Phone number must be exactly 10 digits.", "danger")
             return redirect(url_for("admin_bp.admin_edit_labour", labour_id=labour.id))
 
-        # Bank account validation
         if bank_account and not re.fullmatch(r"\d+", bank_account):
             flash("Bank account number must contain digits only.", "danger")
             return redirect(url_for("admin_bp.admin_edit_labour", labour_id=labour.id))
 
+        labour.gate_pass_id = gate_pass_id or None
         labour.name = name
         labour.phone = phone
         labour.bank_account = bank_account
@@ -384,7 +537,6 @@ def admin_edit_labour(labour_id):
         labour.site_id = site_id
         labour.daily_wage = daily_wage
         labour.is_active = is_active
-
 
         try:
             db.session.commit()
@@ -398,7 +550,48 @@ def admin_edit_labour(labour_id):
                 url_for('admin_bp.admin_edit_labour', labour_id=labour.id)
             )
 
-        # AUDIT
+        # ---- OPTIONAL FILE REPLACEMENT ----
+        try:
+            photo = request.files.get('photo')
+            aadhaar_front = request.files.get('aadhaar_front')
+            aadhaar_back = request.files.get('aadhaar_back')
+            gate_pass_front = request.files.get('gate_pass_front')
+            gate_pass_back = request.files.get('gate_pass_back')
+
+            if photo:
+                labour.photo_path = save_and_compress_image(
+                    photo, labour.id, 'photo.jpg'
+                )
+
+            if aadhaar_front:
+                labour.aadhaar_front_path = save_and_compress_image(
+                    aadhaar_front, labour.id, 'aadhaar_front.jpg'
+                )
+
+            if aadhaar_back:
+                labour.aadhaar_back_path = save_and_compress_image(
+                    aadhaar_back, labour.id, 'aadhaar_back.jpg'
+                )
+
+            if gate_pass_front:
+                labour.gate_pass_front_path = save_and_compress_image(
+                    gate_pass_front, labour.id, 'gate_pass_front.jpg'
+                )
+
+            if gate_pass_back:
+                labour.gate_pass_back_path = save_and_compress_image(
+                    gate_pass_back, labour.id, 'gate_pass_back.jpg'
+                )
+
+            db.session.commit()
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+            return redirect(
+                url_for('admin_bp.admin_edit_labour', labour_id=labour.id)
+            )
+
+        # ---- AUDIT ----
         log_action(
             action='labour_updated',
             details=f"Labour '{labour.name}' updated",
@@ -423,24 +616,62 @@ def delete_labour(labour_id):
 
     labour = Labour.query.get_or_404(labour_id)
 
-    #  Check dependencies
-    has_attendance = Attendance.query.filter_by(labour_id=labour.id).first()
-    has_payments = Payment.query.filter_by(labour_id=labour.id).first()
-    has_expenses = LabourMonthlyExpenses.query.filter_by(labour_id=labour.id).first()
+    # RULE 0: ANY ATTENDANCE RECORD EXISTS? (SAFETY)
+    any_attendance = Attendance.query.filter(
+        Attendance.labour_id == labour.id
+    ).first()
 
-    if has_attendance or has_payments or has_expenses:
+    if any_attendance:
         flash(
-            f"Cannot delete labour '{labour.name}'. Attendance / payment history exists. "
-            f"Deactivate instead.",
+            f"Cannot delete labour '{labour.name}'. "
+            f"Attendance records exist. Deactivate instead.",
             "danger"
         )
         return redirect(url_for('admin_bp.admin_labours'))
 
-    # Safe delete
-    db.session.delete(labour)
-    db.session.commit()
+    # RULE 1: ANY PAYMENT / ADVANCE EXISTS?
+    any_payment = Payment.query.filter(
+        Payment.labour_id == labour.id
+    ).first()
 
-    #  Audit log
+    if any_payment:
+        flash(
+            f"Cannot delete labour '{labour.name}'. "
+            f"Payment or advance history exists. Deactivate instead.",
+            "danger"
+        )
+        return redirect(url_for('admin_bp.admin_labours'))
+
+    # RULE 2: MONTHLY EXPENSE RECORD EXISTS?
+
+    any_expense = LabourMonthlyExpenses.query.filter(
+        LabourMonthlyExpenses.labour_id == labour.id
+    ).first()
+
+    if any_expense:
+        flash(
+            f"Cannot delete labour '{labour.name}'. "
+            f"Expense history exists. Deactivate instead.",
+            "danger"
+        )
+        return redirect(url_for('admin_bp.admin_labours'))
+
+    # SAFE HARD DELETE (NO DEPENDENCIES)
+
+    try:
+        db.session.delete(labour)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(
+            "Unable to delete labour due to system constraints. "
+            "Deactivate instead.",
+            "danger"
+        )
+        return redirect(url_for('admin_bp.admin_labours'))
+
+    # AUDIT LOG
+   
     log = AuditLog(
         user_id=current_user.id,
         username=current_user.username,
@@ -456,7 +687,6 @@ def delete_labour(labour_id):
 
     flash('Labour deleted successfully', 'success')
     return redirect(url_for('admin_bp.admin_labours'))
-
 
 
 # =========================
@@ -1186,44 +1416,7 @@ def labour_salary_sheet():
         grand_total=grand_total
     )
 
-#----------archive_audit_logs(days=180)---------------------------
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from models import AuditLog, AuditLogArchive
 
-
-def archive_audit_logs_keep_last_3_months():
-    now = datetime.utcnow()
-
-    # First day of current month
-    first_day_current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    # Keep current + last 2 months → archive older than this
-    cutoff = first_day_current_month - relativedelta(months=2)
-
-    old_logs = AuditLog.query.filter(
-        AuditLog.created_at < cutoff
-    ).all()
-
-    if not old_logs:
-        return 0
-
-    for log in old_logs:
-        archived = AuditLogArchive(
-            user_id=log.user_id,
-            username=log.username,
-            role=log.role,
-            site_id=log.site_id,
-            action=log.action,
-            details=log.details,
-            ip_address=log.ip_address,
-            created_at=log.created_at
-        )
-        db.session.add(archived)
-        db.session.delete(log)
-
-    db.session.commit()
-    return len(old_logs)
 
 #----------MANUAL METHOD archive_audit_logs(days=180)---------------------------
 @admin_bp.route('/audit/archive-now', methods=['POST'])
@@ -1239,114 +1432,39 @@ def archive_audit_now():
 
 
 #------------LABOUR SUMMAY MODAL-------------
+from flask import jsonify
+from services.labour_summary_service import build_monthly_summary
 
 @admin_bp.route('/api/labour/<int:labour_id>/monthly-summary')
 @login_required
 def labour_monthly_summary(labour_id):
 
-    month = request.args.get('month')  # YYYY-MM
+    month = request.args.get('month')
     if not month:
         return jsonify({"error": "Month is required"}), 400
 
-    # ---- Parse month ----
-    try:
-        year, mon = map(int, month.split('-'))
-        start_date = date(year, mon, 1)
-        if mon == 12:
-            end_date = date(year + 1, 1, 1)
-        else:
-            end_date = date(year, mon + 1, 1)
-    except Exception:
-        return jsonify({"error": "Invalid month format"}), 400
-
-    # ---- Labour ----
     labour = Labour.query.get_or_404(labour_id)
 
-    # ---- Attendance ----
-    attendance_rows = Attendance.query.filter(
-        Attendance.labour_id == labour_id,
-        Attendance.date >= start_date,
-        Attendance.date < end_date
-    ).order_by(Attendance.date).all()
+    summary = build_monthly_summary(labour, month)
 
-    day_shifts = 0
-    night_shifts = 0
-    absent_days = 0
-    calendar = []
+    def file_url(path):
+        return url_for('static', filename=path) if path else None
 
-    for r in attendance_rows:
-        worked = False
-
-        if r.day_shift_flag:
-            day_shifts += 1
-            worked = True
-
-        if r.night_shift_flag:
-            night_shifts += 1
-            worked = True
-
-        if not worked:
-            absent_days += 1
-
-        calendar.append({
-            "date": r.date.isoformat(),
-            "day": int(r.day_shift_flag),
-            "night": int(r.night_shift_flag),
-            "status": "ABSENT" if not worked else "PRESENT"
-        })
-
-    total_shifts = day_shifts + night_shifts
-
-    # ---- Earnings ----
-    daily_wage = float(labour.daily_wage or 0)
-    earned_pay = daily_wage * total_shifts
-
-    # ---- Advances (up to month end) ----
-    advance_paid = (
-        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
-        .filter(
-            Payment.labour_id == labour_id,
-            Payment.date < end_date
-        )
-        .scalar()
-    ) or 0
-
-    # ---- Monthly expenses ----
-    expense = LabourMonthlyExpenses.query.filter_by(
-        labour_id=labour_id,
-        site_id=labour.site_id,
-        month=month
-    ).first()
-
-    mess = float(expense.mess_amount) if expense else 0
-    canteen = float(expense.canteen_amount) if expense else 0
-    total_expense = mess + canteen
-
-    # ---- Net payable ----
-    net_payable = earned_pay - advance_paid - total_expense
-
-    # ---- Final JSON ----
     return jsonify({
         "labour": {
             "name": labour.name,
             "phone": labour.phone,
-            "site": labour.site.site_name if labour.site else "-"
+            "site": labour.site.site_name if labour.site else "-",
+            "gate_pass_id": labour.gate_pass_id,
+            "photo_url": file_url(labour.photo_path),
+            "aadhaar_front_url": file_url(labour.aadhaar_front_path),
+            "aadhaar_back_url": file_url(labour.aadhaar_back_path),
+            "gate_pass_front_url": file_url(labour.gate_pass_front_path),
+            "gate_pass_back_url": file_url(labour.gate_pass_back_path)
         },
-        "attendance_summary": {
-            "day_shifts": day_shifts,
-            "night_shifts": night_shifts,
-            "total_shifts": total_shifts,
-            "absent_days": absent_days
-        },
-        "payment_summary": {
-            "daily_wage": daily_wage,
-            "earned_pay": earned_pay,
-            "advance_paid": advance_paid,
-            "mess_canteen": total_expense,
-            "net_payable": net_payable
-        },
-        "calendar": calendar
+        **summary
     })
+
 
 #-------------------VIEW MONTHLY ATTANDANCE---------------
 

@@ -11,7 +11,10 @@ from models import db, Site, Labour, Attendance, Payment, log_event
 
 from calendar import monthrange
 from sqlalchemy import func, case
+import re
+from services.image_service import save_and_compress_image
 
+from models import LabourMonthlyExpenses
 
 manager_bp = Blueprint('manager_bp', __name__, url_prefix='/manager', template_folder='templates')
 
@@ -38,13 +41,12 @@ def log_action(user, action, details=None, site_id=None):
         role=user.role if user else None,
         site_id=site_id,
         action=action,
-        details=details,
+        details=json.dumps(details) if isinstance(details, dict) else details,
         ip_address=request.remote_addr,
         created_at=datetime.utcnow()
     )
     db.session.add(log)
-
-
+    db.session.commit()   
 
 
 def _manager_required():
@@ -227,6 +229,94 @@ def labours():
         labours=labours,
         search=search
     )
+
+@manager_bp.route('/labours/<int:labour_id>/edit', methods=['GET', 'POST'])
+@login_required
+def manager_edit_labour(labour_id):
+
+    if not _manager_required():
+        return redirect(url_for('auth.login'))
+
+    labour = Labour.query.filter_by(
+        id=labour_id,
+        site_id=current_user.site_id
+    ).first_or_404()
+
+    if request.method == 'POST':
+
+        # ⛔ DO NOT READ daily_wage, is_active, site_id
+        labour.gate_pass_id = request.form.get('gate_pass_id') or None
+        labour.name = request.form.get('name', '').strip()
+        labour.phone = request.form.get('phone', '').strip()
+        labour.bank_account = request.form.get('bank_account', '').strip()
+        labour.ifsc_code = request.form.get('ifsc_code', '').strip()
+
+        # ---- VALIDATIONS ----
+        if labour.phone and not re.fullmatch(r"\d{10}", labour.phone):
+            flash("Phone number must be exactly 10 digits.", "danger")
+            return redirect(url_for('manager_bp.manager_edit_labour', labour_id=labour.id))
+
+        if labour.bank_account and not re.fullmatch(r"\d+", labour.bank_account):
+            flash("Bank account must contain digits only.", "danger")
+            return redirect(url_for('manager_bp.manager_edit_labour', labour_id=labour.id))
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("Duplicate phone number for this site.", "danger")
+            return redirect(url_for('manager_bp.manager_edit_labour', labour_id=labour.id))
+
+        # ---- FILE UPDATES (ALLOWED) ----
+        try:
+            photo = request.files.get('photo')
+            aadhaar_front = request.files.get('aadhaar_front')
+            aadhaar_back = request.files.get('aadhaar_back')
+            gate_pass_front = request.files.get('gate_pass_front')
+            gate_pass_back = request.files.get('gate_pass_back')
+
+            if photo:
+                labour.photo_path = save_and_compress_image(photo, labour.id, 'photo.jpg')
+
+            if aadhaar_front:
+                labour.aadhaar_front_path = save_and_compress_image(aadhaar_front, labour.id, 'aadhaar_front.jpg')
+
+            if aadhaar_back:
+                labour.aadhaar_back_path = save_and_compress_image(aadhaar_back, labour.id, 'aadhaar_back.jpg')
+
+            if gate_pass_front:
+                labour.gate_pass_front_path = save_and_compress_image(gate_pass_front, labour.id, 'gate_pass_front.jpg')
+
+            if gate_pass_back:
+                labour.gate_pass_back_path = save_and_compress_image(gate_pass_back, labour.id, 'gate_pass_back.jpg')
+
+            db.session.commit()
+
+        except ValueError as e:
+            db.session.rollback()
+            flash(str(e), "danger")
+            return redirect(url_for('manager_bp.manager_edit_labour', labour_id=labour.id))
+
+        # ================= AUDIT LOG (🔥 THIS WAS MISSING) =================
+        log_action(
+            user=current_user,
+            action='labour_updated',
+            details=f"Labour '{labour.name}' updated by manager",
+            site_id=current_user.site_id
+        )
+        db.session.commit()
+
+        # ==================================================================
+
+        flash("Labour updated successfully.", "success")
+        return redirect(url_for('manager_bp.labours'))
+
+    return render_template(
+        'manager_edit_labour.html',
+        labour=labour
+    )
+
+
 
 
 # ===============================
@@ -424,6 +514,7 @@ def manager_monthly_attendance():
 def add_payment():
     if not _manager_required():
         return redirect(url_for('auth.login'))
+        
 
     # Only active labours of this manager's site
     labours = Labour.query.filter_by(
@@ -436,6 +527,7 @@ def add_payment():
         date_str = request.form.get('date')
         advance_str = request.form.get('advance')
         note = request.form.get('note')
+        
 
         # ---------- VALIDATIONS ----------
         if not labour_id or not advance_str:
@@ -484,8 +576,23 @@ def add_payment():
             created_by_id=current_user.id
         )
 
+
         db.session.add(payment)
         db.session.commit()
+
+        log_action(
+            user=current_user,
+            action='manager_add_payment',
+            details={
+                'payment_id': payment.id,
+                'labour_id': payment.labour_id,
+                'advance': float(payment.advance),
+                'note': payment.note,
+                'date': payment.date.isoformat() if payment.date else None
+            },
+            site_id=current_user.site_id
+        )
+
 
         flash('Advance payment added successfully', 'success')
         return redirect(url_for('manager_bp.payment_history'))
@@ -523,108 +630,46 @@ def payment_history():
 # =========================================================
 # MANAGER – LABOUR MONTHLY SUMMARY (READ ONLY)
 # =========================================================
-
 from flask import jsonify
+from services.labour_summary_service import build_monthly_summary
 
 @manager_bp.route('/api/labour/<int:labour_id>/monthly-summary')
 @login_required
 def manager_labour_monthly_summary(labour_id):
 
-    # ---- Role check ----
     if not _manager_required():
         return jsonify({"error": "Unauthorized"}), 403
 
-    month = request.args.get('month')  # YYYY-MM
+    month = request.args.get('month')
     if not month:
         return jsonify({"error": "Month is required"}), 400
 
-    # ---- Parse month ----
-    try:
-        year, mon = map(int, month.split('-'))
-        start_date = date(year, mon, 1)
-        if mon == 12:
-            end_date = date(year + 1, 1, 1)
-        else:
-            end_date = date(year, mon + 1, 1)
-    except Exception:
-        return jsonify({"error": "Invalid month"}), 400
-
-    # ---- Labour (STRICT site filter) ----
     labour = Labour.query.filter_by(
         id=labour_id,
         site_id=current_user.site_id
     ).first_or_404()
 
-    # ---- Attendance ----
-    attendance_rows = Attendance.query.filter(
-        Attendance.labour_id == labour_id,
-        Attendance.site_id == current_user.site_id,
-        Attendance.date >= start_date,
-        Attendance.date < end_date
-    ).order_by(Attendance.date).all()
+    summary = build_monthly_summary(
+        labour,
+        month,
+        site_id=current_user.site_id
+    )
 
-    day_shifts = 0
-    night_shifts = 0
-    absent_days = 0
-    calendar = []
-
-    for r in attendance_rows:
-        worked = False
-
-        if r.day_shift_flag:
-            day_shifts += 1
-            worked = True
-
-        if r.night_shift_flag:
-            night_shifts += 1
-            worked = True
-
-        if not worked:
-            absent_days += 1
-
-        calendar.append({
-            "date": r.date.isoformat(),
-            "status": "PRESENT" if worked else "ABSENT"
-        })
-
-    total_shifts = day_shifts + night_shifts
-
-    # ---- Earnings (read-only) ----
-    daily_wage = float(labour.daily_wage or 0)
-    earned_pay = daily_wage * total_shifts
-
-    # ---- Advances (read-only) ----
-    advance_paid = (
-        db.session.query(func.coalesce(func.sum(Payment.advance), 0))
-        .filter(
-            Payment.labour_id == labour_id,
-            Payment.site_id == current_user.site_id,
-            Payment.date < end_date
-        )
-        .scalar()
-    ) or 0
-
-    # ---- Net payable ----
-    net_payable = earned_pay - advance_paid
+    def file_url(path):
+        return url_for('static', filename=path) if path else None
 
     return jsonify({
         "labour": {
             "name": labour.name,
             "phone": labour.phone,
-            "site": labour.site.site_name if labour.site else "-"
+            "site": labour.site.site_name if labour.site else "-",
+            "gate_pass_id": labour.gate_pass_id,
+            "photo_url": file_url(labour.photo_path),
+            "aadhaar_front_url": file_url(labour.aadhaar_front_path),
+            "aadhaar_back_url": file_url(labour.aadhaar_back_path),
+            "gate_pass_front_url": file_url(labour.gate_pass_front_path),
+            "gate_pass_back_url": file_url(labour.gate_pass_back_path)
         },
-        "attendance_summary": {
-            "day_shifts": day_shifts,
-            "night_shifts": night_shifts,
-            "total_shifts": total_shifts,
-            "absent_days": absent_days
-        },
-        "payment_summary": {
-            "daily_wage": daily_wage,
-            "earned_pay": earned_pay,
-            "advance_paid": advance_paid,
-            "mess_canteen": 0,          # managers don’t manage this
-            "net_payable": net_payable
-        },
-        "calendar": calendar
+        **summary
     })
+

@@ -21,10 +21,22 @@
   <!-- Form -->
   <div class="card">
     <div class="card-body">
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
+
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Gate Pass ID</label>
+          <input type="text"
+                name="gate_pass_id"
+                class="form-control"
+                placeholder="Enter gate pass ID">
+        </div>
 
         <div class="row">
+
+          
           <!-- Name -->
+
           <div class="col-md-6 mb-3">
             <label class="form-label">Labour Name</label>
             <input type="text"
@@ -71,7 +83,8 @@
             <label class="form-label">IFSC Code</label>
             <input type="text"
                    name="ifsc_code"
-                   class="form-control">
+                   class="form-control"
+                   placeholder="ABCD1234567">
           </div>
         </div>
 
@@ -99,6 +112,49 @@
                    value="533.00">
           </div>
         </div>
+
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <label>Labour Photo</label>
+            <input type="file" name="photo" class="form-control image-input"
+              accept="image/*"
+              capture="environment">
+          </div>
+
+          <div class="col-md-4">
+            <label>Aadhaar Front</label>
+            <input type="file" name="aadhaar_front" class="form-control image-input"
+              accept="image/*"
+              capture="environment">
+          </div>
+
+          <div class="col-md-4">
+            <label>Aadhaar Back</label>
+            <input type="file" name="aadhaar_back" class="form-control image-input"
+              accept="image/*"
+              capture="environment">
+          </div>
+        </div>
+
+        <div class="row mt-3">
+
+          <div class="col-md-4">
+            <label>Gate Pass Front</label>
+            <input type="file" name="gate_pass_front" class="form-control image-input"
+              accept="image/*"
+              capture="environment">
+          </div>
+
+          <div class="col-md-4">
+            <label>Gate Pass Back</label>
+            <input type="file" name="gate_pass_back" class="form-control image-input"
+              accept="image/*"
+              capture="environment">
+          </div>
+        </div>
+
+        
+
 
         <!-- Active -->
         <div class="mb-3 form-check">

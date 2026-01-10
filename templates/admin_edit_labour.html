@@ -21,9 +21,21 @@
   <!-- Form -->
   <div class="card">
     <div class="card-body">
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
+
+        <!-- Gate Pass ID -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Gate Pass ID</label>
+            <input type="text"
+                  name="gate_pass_id"
+                  class="form-control"
+                  value="{{ labour.gate_pass_id or '' }}"
+                  placeholder="Enter gate pass ID">
+          </div>
 
         <div class="row">
+
+          
           <!-- Name -->
           <div class="col-md-6 mb-3">
             <label class="form-label">Labour Name</label>
@@ -98,6 +110,96 @@
                    value="{{ labour.daily_wage or '' }}">
           </div>
         </div>
+
+        <hr>
+
+          <div class="row">
+
+            <!-- Labour Photo -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Labour Photo (max 1MB)</label>
+              <input type="file"
+                    name="photo"
+                    class="form-control image-input"
+                    accept="image/*"
+                    capture="environment">
+
+              {% if labour.photo_path %}
+                <div class="mt-2">
+                  <img src="{{ url_for('static', filename=labour.photo_path) }}"
+                      alt="Labour Photo"
+                      class="img-thumbnail"
+                      style="max-height: 150px;">
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Aadhaar Front -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Aadhaar Front (max 1MB)</label>
+              <input type="file"
+                    name="aadhaar_front"
+                    class="form-control image-input"
+                    accept="image/*"
+                    capture="environment">
+
+              {% if labour.aadhaar_front_path %}
+                <div class="mt-2">
+                  <img src="{{ url_for('static', filename=labour.aadhaar_front_path) }}"
+                      alt="Aadhaar Front"
+                      class="img-thumbnail"
+                      style="max-height: 150px;">
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Aadhaar Back -->
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Aadhaar Back (max 1MB)</label>
+              <input type="file"
+                    name="aadhaar_back"
+                    class="form-control image-input"
+                    accept="image/*"
+                    capture="environment">
+
+              {% if labour.aadhaar_back_path %}
+                <div class="mt-2">
+                  <img src="{{ url_for('static', filename=labour.aadhaar_back_path) }}"
+                      alt="Aadhaar Back"
+                      class="img-thumbnail"
+                      style="max-height: 150px;">
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Gate Pass Front (max 1MB)</label>
+              <input type="file" name="gate_pass_front" class="form-control image-input"
+                accept="image/*"
+                capture="environment">
+              {% if labour.gate_pass_front_path %}
+                <img src="{{ url_for('static', filename=labour.gate_pass_front_path) }}"
+                    class="img-thumbnail mt-2"
+                    style="max-height:140px;">
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Gate Pass Back (max 1MB)</label>
+              <input type="file" name="gate_pass_back" class="form-control image-input"
+                accept="image/*"
+                capture="environment">
+              {% if labour.gate_pass_back_path %}
+                <img src="{{ url_for('static', filename=labour.gate_pass_back_path) }}"
+                    class="img-thumbnail mt-2"
+                    style="max-height:140px;">
+              {% endif %}
+            </div>
+
+
+          </div>
+
+        <hr>
 
         <!-- Active -->
         <div class="mb-3 form-check">

@@ -1,16 +1,20 @@
 /* =========================================================
-   Labour Monthly Summary - CLEAN FINAL VERSION
+   Labour Monthly Summary - UNIVERSAL (ADMIN + MANAGER)
    ========================================================= */
 
-const API_BASE = document.body.dataset.apiBase;
+/* ---------- AUTO DETECT API BASE ---------- */
+function getApiBase() {
+  if (window.location.pathname.startsWith("/admin")) return "admin";
+  if (window.location.pathname.startsWith("/manager")) return "manager";
+  return "";
+}
 
-
+const API_BASE = getApiBase();
 let CURRENT_LABOUR_ID = null;
 
 /* ---------- DOM READY ---------- */
 document.addEventListener("DOMContentLoaded", function () {
 
-  // Click on labour name
   document.querySelectorAll(".labour-link").forEach(el => {
     el.addEventListener("click", function (e) {
       e.preventDefault();
@@ -19,7 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Month selector change
   const monthInput = document.getElementById("month-selector");
   if (monthInput) {
     monthInput.addEventListener("change", function () {
@@ -30,14 +33,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
-
 /* ---------- OPEN MODAL ---------- */
 function openModalWithCurrentMonth() {
   const today = new Date();
   const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
   const monthInput = document.getElementById("month-selector");
-  monthInput.value = monthStr;
+  if (monthInput) monthInput.value = monthStr;
 
   loadLabourSummary(CURRENT_LABOUR_ID, monthStr);
 
@@ -46,13 +48,10 @@ function openModalWithCurrentMonth() {
   ).show();
 }
 
-
 /* ---------- LOAD DATA ---------- */
 function loadLabourSummary(labourId, month) {
 
   fetch(`/${API_BASE}/api/labour/${labourId}/monthly-summary?month=${month}`)
-
-
     .then(res => {
       if (!res.ok) throw new Error("API error");
       return res.json();
@@ -67,11 +66,11 @@ function loadLabourSummary(labourId, month) {
     });
 }
 
-
 /* ---------- FILL MODAL ---------- */
 function fillModal(data) {
 
   setText("ls-name", data.labour.name);
+  setText("ls-gate_pass_id", data.labour.gate_pass_id);
   setText("ls-phone", data.labour.phone);
   setText("ls-site", data.labour.site);
 
@@ -85,25 +84,71 @@ function fillModal(data) {
   setText("ps-advance", data.payment_summary.advance_paid);
   setText("ps-expense", data.payment_summary.mess_canteen);
   setText("ps-net", data.payment_summary.net_payable);
+
+  /* ---------- PHOTO ---------- */
+  const photoUrl = data.labour.photo_url || "/static/img/user.png";
+  const avatar = document.getElementById("ls-avatar");
+  const photo = document.getElementById("ls-photo");
+  
+
+  if (avatar) avatar.src = photoUrl;
+  if (photo) photo.src = photoUrl;
+
+  /* ---------- AADHAAR ---------- */
+  const frontBtn = document.getElementById("ls-aadhaar-front");
+  const backBtn = document.getElementById("ls-aadhaar-back");
+
+  if (frontBtn) {
+    frontBtn.href = data.labour.aadhaar_front_url || "#";
+    frontBtn.classList.toggle("disabled", !data.labour.aadhaar_front_url);
+  }
+
+  if (backBtn) {
+    backBtn.href = data.labour.aadhaar_back_url || "#";
+    backBtn.classList.toggle("disabled", !data.labour.aadhaar_back_url);
+  }
+
+  // ---------- Gate Pass Documents ----------
+  const gpFront = document.getElementById("ls-gate-pass-front");
+  const gpBack = document.getElementById("ls-gate-pass-back");
+
+  if (gpFront) {
+    if (data.labour.gate_pass_front_url) {
+      gpFront.href = data.labour.gate_pass_front_url;
+      gpFront.classList.remove("disabled");
+    } else {
+      gpFront.classList.add("disabled");
+    }
+  }
+
+  if (gpBack) {
+    if (data.labour.gate_pass_back_url) {
+      gpBack.href = data.labour.gate_pass_back_url;
+      gpBack.classList.remove("disabled");
+    } else {
+      gpBack.classList.add("disabled");
+    }
+  }
+
+
+
 }
 
-
-/* ---------- CALENDAR (CORRECTLY ALIGNED) ---------- */
+/* ---------- CALENDAR ---------- */
 function renderCalendar(calendarData, monthStr) {
 
   const container = document.getElementById("attendance-calendar");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const [year, month] = monthStr.split("-").map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDay = new Date(year, month - 1, 1).getDay(); // 0 = Sunday
+  const firstDay = new Date(year, month - 1, 1).getDay();
 
   const statusMap = {};
-  calendarData.forEach(d => {
-    statusMap[d.date] = d.status;
-  });
+  calendarData.forEach(d => statusMap[d.date] = d.status);
 
-  // Weekday header
   const weekdays = document.createElement("div");
   weekdays.className = "calendar-weekdays";
   ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(w => {
@@ -113,35 +158,25 @@ function renderCalendar(calendarData, monthStr) {
   });
   container.appendChild(weekdays);
 
-  // Grid
   const grid = document.createElement("div");
   grid.className = "calendar-grid";
 
-  // Empty cells
   for (let i = 0; i < firstDay; i++) {
-    const empty = document.createElement("div");
-    empty.className = "calendar-empty";
-    grid.appendChild(empty);
+    grid.appendChild(document.createElement("div"));
   }
 
-  // Days
   for (let day = 1; day <= daysInMonth; day++) {
     const cell = document.createElement("div");
     const dateStr = `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
     cell.innerText = day;
-
-    if (statusMap[dateStr] === "PRESENT") {
-      cell.className = "calendar-day present";
-    } else {
-      cell.className = "calendar-day absent";
-    }
-
+    cell.className = statusMap[dateStr] === "PRESENT"
+      ? "calendar-day present"
+      : "calendar-day absent";
     grid.appendChild(cell);
   }
 
   container.appendChild(grid);
 }
-
 
 /* ---------- UTILS ---------- */
 function setText(id, value) {

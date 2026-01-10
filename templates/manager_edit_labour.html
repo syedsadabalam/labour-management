@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Edit Labour{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <h4 class="mb-3">Edit Labour</h4>
+
+  <form method="post" enctype="multipart/form-data">
+
+    <div class="row">
+
+      <div class="col-md-6 mb-3">
+        <label>Gate Pass ID</label>
+        <input type="text" name="gate_pass_id" class="form-control"
+               value="{{ labour.gate_pass_id or '' }}">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Labour Name</label>
+        <input type="text" name="name" class="form-control"
+               value="{{ labour.name }}" required>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Phone</label>
+        <input type="text" name="phone" class="form-control"
+               value="{{ labour.phone }}" maxlength="10" required>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Bank Account</label>
+        <input type="text" name="bank_account" class="form-control"
+               value="{{ labour.bank_account }}">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>IFSC Code</label>
+        <input type="text" name="ifsc_code" class="form-control"
+               value="{{ labour.ifsc_code or '' }}">
+      </div>
+
+      <!-- 🔒 READ-ONLY FIELDS -->
+      <div class="col-md-6 mb-3">
+        <label>Daily Wage</label>
+        <input type="text" class="form-control"
+               value="{{ labour.daily_wage }}" disabled>
+      </div>
+
+    </div>
+    <h5>Photo & Documents</h5>
+    <hr>
+
+    <!-- Documents (allowed) -->
+    <div class="row">
+
+      <div class="col-md-4 mb-3">
+        <label>Labour Photo</label>
+        <input type="file" name="photo" class="form-control image-input" accept="image/*">
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label>Aadhaar Front</label>
+        <input type="file" name="aadhaar_front" class="form-control image-input" accept="image/*">
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label>Aadhaar Back</label>
+        <input type="file" name="aadhaar_back" class="form-control image-input" accept="image/*">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Gate Pass Front</label>
+        <input type="file" name="gate_pass_front" class="form-control image-input" accept="image/*">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label>Gate Pass Back</label>
+        <input type="file" name="gate_pass_back" class="form-control image-input" accept="image/*">
+      </div>
+
+    </div>
+
+    <div class="mt-4">
+      <button class="btn btn-primary">Update</button>
+      <a href="{{ url_for('manager_bp.labours') }}"
+         class="btn btn-outline-secondary ms-2">Cancel</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

@@ -15,7 +15,7 @@ class Config:
     # --------------------
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("DATABASE_URL")
-        or "mysql+pymysql://root:Admin%40123@localhost/labour_db"
+        or "mysql+pymysql://root:Admin%40123@localhost/labour_db_local"
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

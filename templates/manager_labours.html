@@ -2,109 +2,127 @@
 {% block title %}Labours{% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
 
-  <!-- Header -->
-  <div class="row mb-3">
-    <div class="col-8">
+  <!-- PAGE HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
       <h4 class="mb-0">Labours</h4>
-      <p class="text-muted small">Labours assigned to your site</p>
-    </div>
-    <div class="col-4 text-end">
-      <!-- Manager has NO admin actions -->
-      <span class="badge bg-secondary">View only</span>
+      <small class="text-muted">Labours assigned to your site</small>
     </div>
   </div>
 
-  <!-- Search -->
-  <form method="get" class="mb-3">
-    <div class="input-group" style="max-width: 350px;">
-      <input
-      type="text"
-      name="search"
-      class="form-control"
-      placeholder="Search by name, phone, bank or IFSC"
-      value="{{ search }}">
-
-      <button class="btn btn-outline-secondary">Search</button>
-      <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-dark">
-        Reset
-      </a>
+  <!-- SEARCH -->
+  <form method="get" class="card p-3 mb-3">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input
+          type="text"
+          name="search"
+          value="{{ search }}"
+          class="form-control"
+          placeholder="Search by name, phone or gate pass ID"
+        >
+      </div>
+      <div class="col-md-6">
+        <button class="btn btn-primary">Search</button>
+        <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-secondary">Reset</a>
+      </div>
     </div>
   </form>
 
-  <!-- Table -->
+  <!-- TABLE -->
   <div class="card">
-    <div class="card-body p-0">
-      {% if labours %}
-      <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th style="width:50px">#</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Bank Account No</th>
-              <th>IFSC Code</th>
-              <th>Site</th>
-              <th>Daily Wage</th>
-              <th>Status</th>
-              <th style="width:120px">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for labour in labours %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>
-                <a href="#"
-                      class="labour-link"
-                      data-labour-id="{{ labour.id }}">
-                      {{ labour.name }}
-                </a>
-              </td>
-              <td>{{ labour.phone or '-' }}</td>
-              <td>{{ labour.bank_account or '-' }}</td>
-              <td>{{ labour.ifsc_code or '-' }}</td>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Labour</th>
+            <th>Bank Account</th>
+            <th>IFSC</th>
+            <th>Site</th>
+            <th>Daily Wage</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
 
-              <td>
-                {% if labour.site %}
-                  {{ labour.site.site_name or '-' }}
+          {% for labour in labours %}
+          <tr>
+            <td>{{ loop.index }}</td>
+
+            <!-- LABOUR COLUMN -->
+            <td>
+              <div class="d-flex align-items-center gap-2">
+
+                {% if labour.photo_path %}
+                  <img
+                    src="{{ url_for('static', filename=labour.photo_path) }}"
+                    class="rounded-circle"
+                    style="width:100px;height:100px;object-fit:cover;"
+                  >
                 {% else %}
-                  -
+                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                       style="width:100px;height:100px;">
+                    {{ labour.name[0] }}
+                  </div>
                 {% endif %}
-              </td>
 
-              <td>
-                {% if labour.daily_wage is not none %}
-                  ₹{{ "%.2f"|format(labour.daily_wage) }}
-                {% else %}
-                  -
-                {% endif %}
-              </td>
+                <div>
+                  <a href="#"
+                     class="labour-link fw-semibold"
+                     data-labour-id="{{ labour.id }}">
+                    {{ labour.name }}
+                  </a>
 
-              <td>
-                {% if labour.is_active %}
-                  <span class="badge bg-success">Active</span>
-                {% else %}
-                  <span class="badge bg-secondary">Inactive</span>
-                {% endif %}
-              </td>
+                  {% if labour.gate_pass_id %}
+                    <div class="small text-muted">Gate Pass: {{ labour.gate_pass_id }}</div>
+                  {% endif %}
 
-              <td>
-                <span class="badge bg-secondary">View only</span>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-        <div class="p-4 text-center text-muted">No labours found.</div>
-      {% endif %}
+                  <div class="small text-muted">
+                    📞 {{ labour.phone }}
+                  </div>
+                </div>
+
+              </div>
+            </td>
+
+            <td>{{ labour.bank_account or "-" }}</td>
+            <td>{{ labour.ifsc_code or "-" }}</td>
+            <td>{{ labour.site.site_name }}</td>
+            <td>₹{{ labour.daily_wage }}</td>
+
+            <td>
+              {% if labour.is_active %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <a href="{{ url_for('manager_bp.manager_edit_labour', labour_id=labour.id) }}"
+                class="btn btn-sm btn-outline-primary">
+                Edit
+              </a>
+
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              No labours found
+            </td>
+          </tr>
+          {% endfor %}
+
+        </tbody>
+      </table>
     </div>
   </div>
-
 </div>
 
 <!-- Labour Monthly Summary Modal -->
@@ -112,28 +130,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content">
 
-        <!-- 1️⃣ HEADER : Identity + Month -->
-        <div class="modal-header d-flex justify-content-between">
-          <div class="labour-header">
-            <div class="labour-avatar">👤</div>
-            <div>
-              <div id="ls-name" class="labour-name"></div>
-              <div class="labour-meta">
-                <span id="ls-phone"></span> • <span id="ls-site"></span>
-              </div>
-            </div>
-          </div>
-
-
-          <div>
-           
-           <input type="month"
-            id="month-selector"
-            class="form-control form-control-sm"
-            style="width:160px">
-
-          </div>
-        </div>
+        
 
         <!-- 2️⃣ BODY -->
         <div class="modal-body">
@@ -141,6 +138,35 @@
 
             <!-- LEFT SIDE -->
             <div class="col-md-7">
+
+
+              <!-- 1️⃣ HEADER : Identity + Month -->
+              <div class="modal-header d-flex justify-content-between">
+                <div class="labour-header">
+                  
+                  <img id="ls-avatar"
+                  class="rounded-circle border"
+                  style="width:100px;height:100px;object-fit:cover;"
+                  src="">
+
+                  <div>
+                    <div id="ls-name" class="labour-name"></div>
+                    <div class="labour-meta">
+                      🆔<span class="fw-semibold" id="ls-gate_pass_id"></span> <br> 📞<span class="fw-semibold" id="ls-phone"></span> <br>📍<span class="fw-semibold" id="ls-site"></span>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div>
+                
+                  <input type="month"
+                  id="month-selector"
+                  class="form-control form-control-sm"
+                  style="width:160px">
+
+                </div>
+              </div>
 
               <!-- 2️⃣ Attendance Summary -->
               <div class="card summary-card mb-3">
@@ -207,6 +233,58 @@
                 </div>
               </div>
 
+               <!-- Labour Photo & Documents -->
+              <div class="card mb-3">
+                <div class="card-header fw-bold">
+                  Identity & Documents
+                </div>
+
+                <div class="card-body">
+
+                  <!-- Labour Photo -->
+                  <div class="text-center mb-3">
+                    <img id="ls-photo"
+                        src=""
+                        class="rounded shadow-sm"
+                        style="width:160px;height:160px;object-fit:cover;">
+                    <div class="small text-muted mt-1">Labour Photo</div>
+                  </div>
+
+                  <!-- Aadhaar Documents -->
+                  <div class="mt-2 d-flex gap-2 flex-wrap">
+
+                    <a id="ls-aadhaar-front"
+                      href="#"
+                      target="_blank"
+                      class="btn btn-outline-primary btn-sm w-100">
+                      Aadhaar Front
+                    </a>
+
+                    <a id="ls-aadhaar-back"
+                      href="#"
+                      target="_blank"
+                      class="btn btn-outline-primary btn-sm w-100">
+                      Aadhaar Back
+                    </a>
+
+                 
+                    <a id="ls-gate-pass-front"
+                      class="btn btn-outline-primary btn-sm w-100"
+                      target="_blank">
+                      Gate Pass Front
+                    </a>
+
+                    <a id="ls-gate-pass-back"
+                      class="btn btn-outline-primary btn-sm w-100"
+                      target="_blank">
+                      Gate Pass Back
+                    </a>
+                  </div>
+
+
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -224,10 +302,7 @@
   </div>
 
 
-</div>
-
 <link rel="stylesheet" href="{{ url_for('static', filename='css/labour-summary.css') }}">
-
 <script src="{{ url_for('static', filename='js/labours.js') }}"></script>
 
 

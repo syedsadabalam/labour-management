@@ -39,9 +39,19 @@ class Labour(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    gate_pass_id = db.Column(db.String(50), nullable=True)
+
     # Identity
     name = db.Column(db.String(150), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
+
+    #  DOCUMENT PATHS (FILES STORED ON DISK)
+    photo_path = db.Column(db.String(255), nullable=True)
+    aadhaar_front_path = db.Column(db.String(255), nullable=True)
+    aadhaar_back_path = db.Column(db.String(255), nullable=True)
+
+    gate_pass_front_path = db.Column(db.String(255), nullable=True)
+    gate_pass_back_path = db.Column(db.String(255), nullable=True)
 
     # Finance
     bank_account = db.Column(db.String(50), nullable=True)
@@ -65,6 +75,7 @@ class Labour(db.Model):
 
     def __repr__(self):
         return f"<Labour {self.id} {self.name} ({self.phone})>"
+
 
 
 class Attendance(db.Model):
