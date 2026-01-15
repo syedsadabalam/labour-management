@@ -692,6 +692,8 @@ def delete_labour(labour_id):
 # =========================
 # PAYMENTS (ADVANCES ONLY)
 # =========================
+from datetime import datetime
+from sqlalchemy import extract
 
 @admin_bp.route('/payments')
 @login_required
@@ -699,8 +701,50 @@ def admin_payments():
     if not _admin_required():
         return redirect(url_for('auth.login'))
 
-    payments = Payment.query.order_by(Payment.id.desc()).all()
-    return render_template('admin_payments.html', payments=payments)
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+
+    labour_name = request.args.get('labour')
+    site_id = request.args.get('site_id')
+    month = request.args.get('month')
+
+    query = Payment.query.join(Payment.labour).join(Payment.site)
+
+    # Labour filter
+    if labour_name:
+        query = query.filter(Labour.name.ilike(f"%{labour_name}%"))
+
+    # Site filter
+    if site_id:
+        query = query.filter(Payment.site_id == site_id)
+
+    # Month filter (default = current month)
+    if month:
+        year, month_num = map(int, month.split('-'))
+    else:
+        today = datetime.today()
+        year, month_num = today.year, today.month
+
+    query = query.filter(
+        extract('year', Payment.date) == year,
+        extract('month', Payment.date) == month_num
+    )
+
+    pagination = query.order_by(Payment.date.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    sites = Site.query.order_by(Site.site_name).all()
+
+    return render_template(
+        'admin_payments.html',
+        payments=pagination.items,
+        pagination=pagination,
+        sites=sites,
+        current_month=f"{year}-{month_num:02d}"
+    )
 
 
 @admin_bp.route('/payments/add', methods=['GET', 'POST'])

@@ -22,6 +22,54 @@
     </div>
   </div>
 
+  <!-- FILTER BAR -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+
+        <!-- Labour Name -->
+        <div class="col-md-4">
+          <label class="form-label small">Labour Name</label>
+          <input type="text"
+                name="labour"
+                class="form-control"
+                placeholder="e.g. Labour name"
+                value="{{ request.args.get('labour','') }}">
+        </div>
+
+        <!-- Site -->
+        <div class="col-md-4">
+          <label class="form-label small">Site</label>
+          <select name="site_id" class="form-select">
+            <option value="">All Sites</option>
+            {% for site in sites %}
+              <option value="{{ site.id }}"
+                {% if request.args.get('site_id') == site.id|string %}selected{% endif %}>
+                {{ site.site_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Month -->
+        <div class="col-md-3">
+          <label class="form-label small">Month</label>
+          <input type="month"
+                name="month"
+                class="form-control"
+                value="{{ request.args.get('month', current_month) }}">
+        </div>
+
+        <!-- Submit -->
+        <div class="col-md-1 d-grid">
+          <button class="btn btn-primary btn-sm">Filter</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
   <!-- Table -->
   <div class="card">
     <div class="card-body p-0">
@@ -35,7 +83,7 @@
               <th>Labour</th>
               <th>Site</th>
               <th>Advance</th>
-              <th>Total Paid</th>
+             
               <th>Note</th>
               <th style="width:180px">Actions</th>
             </tr>
@@ -43,7 +91,9 @@
           <tbody>
             {% for payment in payments %}
             <tr>
-              <td>{{ loop.index }}</td>
+              <td>
+                {{ (pagination.page - 1) * pagination.per_page + loop.index }}
+              </td>
 
               <td>{{ payment.date or '-' }}</td>
 
@@ -59,9 +109,6 @@
                 ₹{{ "%.2f"|format(payment.advance or 0) }}
               </td>
 
-              <td>
-                ₹{{ "%.2f"|format(payment.total_paid or 0) }}
-              </td>
 
               <td>{{ payment.note or '-' }}</td>
 
@@ -83,6 +130,52 @@
             {% endfor %}
           </tbody>
         </table>
+        {% if pagination.pages > 1 %}
+        <nav class="mt-3">
+          <ul class="pagination justify-content-center pagination-sm">
+
+            <!-- Previous -->
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+              <a class="page-link"
+                href="{{ url_for('admin_bp.admin_payments',
+                                  page=pagination.prev_num,
+                                  labour=request.args.get('labour'),
+                                  site_id=request.args.get('site_id'),
+                                  month=request.args.get('month')) }}">
+                Prev
+              </a>
+            </li>
+
+            <!-- Page numbers -->
+            {% for p in range(1, pagination.pages + 1) %}
+              <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link"
+                  href="{{ url_for('admin_bp.admin_payments',
+                                    page=p,
+                                    labour=request.args.get('labour'),
+                                    site_id=request.args.get('site_id'),
+                                    month=request.args.get('month')) }}">
+                  {{ p }}
+                </a>
+              </li>
+            {% endfor %}
+
+            <!-- Next -->
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+              <a class="page-link"
+                href="{{ url_for('admin_bp.admin_payments',
+                                  page=pagination.next_num,
+                                  labour=request.args.get('labour'),
+                                  site_id=request.args.get('site_id'),
+                                  month=request.args.get('month')) }}">
+                Next
+              </a>
+            </li>
+
+          </ul>
+        </nav>
+        {% endif %}
+
       </div>
       {% else %}
         <div class="p-4 text-center text-muted">No payments recorded.</div>
