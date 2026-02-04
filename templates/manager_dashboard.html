@@ -1,234 +1,275 @@
 {% extends "base.html" %}
-{% block title %}Manager Dashboard{% endblock %}
-{% block page_title %}Dashboard Overview{% endblock %}
+{% block title %}Manager Dashboard | LMS{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- KPI CARDS -->
-  <div class="row g-4 mb-4">
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-    <div class="col-md-3">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <i class="fa-solid fa-users fa-2x text-primary me-3"></i>
-            <div>
-              <div class="text-muted small">Total Active Labours</div>
-              <h4 class="mb-0">{{ total_labours }}</h4>
+    /* --- TOP NAV --- */
+    .manager-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .site-context {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .site-icon {
+        width: 32px;
+        height: 32px;
+        background: #eff6ff;
+        color: var(--primary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --- STAT CARDS --- */
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .icon-blue { background: #eff6ff; color: var(--primary); }
+    .icon-green { background: #dcfce7; color: var(--success); }
+    .icon-red { background: #fee2e2; color: var(--danger); }
+
+    /* --- QUICK ACTIONS --- */
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+    }
+    .action-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .action-btn:hover {
+        border-color: var(--primary);
+        background: #f8fafc;
+        transform: translateY(-2px);
+    }
+    .action-btn i { font-size: 1.5rem; color: var(--text-secondary); }
+    .action-btn:hover i { color: var(--primary); }
+    .action-btn span { font-size: 0.9rem; font-weight: 600; }
+
+    /* --- STATUS ALERT --- */
+    .status-alert {
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+    }
+    .status-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-warning { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
+
+    /* --- RECENT LIST --- */
+    .activity-list {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .activity-item {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+</style>
+
+<div class="manager-nav sticky-top">
+    <div class="site-context">
+        <div class="site-icon"><i class="fa-solid fa-building-user"></i></div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Managing Site</div>
+            <div style="line-height: 1;">{{ current_user.site.site_name if current_user.site else 'Assigned Site' }}</div>
+        </div>
+    </div>
+    <div class="d-md-none">
+        </div>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    {% if dashboard.present_today | default(0) > 0 %}
+        <div class="status-alert status-success">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div>Attendance has been marked for today.</div>
+        </div>
+    {% else %}
+        <div class="status-alert status-warning">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div>Attendance <strong>NOT</strong> marked for today yet.</div>
+        </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4">
+            <div class="stat-card">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Total Labour</div>
+                    <div class="fs-2 fw-bold text-dark">{{ dashboard.total_labours | default(0) }}</div>
+                </div>
+                <div class="stat-icon icon-blue"><i class="fa-solid fa-users"></i></div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <i class="fa-solid fa-calendar-check fa-2x text-success me-3"></i>
-            <div>
-              <div class="text-muted small">Today Present</div>
-              <h4 class="mb-0">{{ today_present }}</h4>
+        <div class="col-6 col-md-4">
+            <div class="stat-card">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Present</div>
+                    <div class="fs-2 fw-bold text-dark">{{ dashboard.present_today | default(0) }}</div>
+                </div>
+                <div class="stat-icon icon-green"><i class="fa-solid fa-user-check"></i></div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <i class="fa-solid fa-user-slash fa-2x text-danger me-3"></i>
-            <div>
-              <div class="text-muted small">Today Absent</div>
-              <h4 class="mb-0">{{ today_absent }}</h4>
+        <div class="col-12 col-md-4">
+            <div class="stat-card">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Absent Today</div>
+                    <div class="fs-2 fw-bold text-dark">{{ dashboard.absent_today | default(0) }}</div>
+                </div>
+                <div class="stat-icon icon-red"><i class="fa-solid fa-user-xmark"></i></div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <i class="fa-solid fa-hand-holding-dollar fa-2x text-warning me-3"></i>
-            <div>
-              <div class="text-muted small">Advances (This Month)</div>
-              <h4 class="mb-0">₹ {{ advances_month }}</h4>
+    <h6 class="fw-bold text-secondary text-uppercase small mb-3 ps-1">Daily Operations</h6>
+    <div class="action-grid mb-4">
+        
+        <a href="{{ url_for('manager_bp.manager_attendance') }}" class="action-btn">
+            <i class="fa-solid fa-clipboard-user"></i>
+            <span>Mark Attendance</span>
+        </a>
 
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        <a href="{{ url_for('manager_bp.manager_add_payment') }}" class="action-btn">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+            <span>Add Advance</span>
+        </a>
 
-  </div>
+        <a href="{{ url_for('manager_bp.manager_labours') }}" class="action-btn">
+            <i class="fa-solid fa-helmet-safety"></i>
+            <span>Labour List</span>
+        </a>
 
-  <!-- STATUS ROW -->
-  <div class="row g-4 mb-4">
-
-    <div class="col-md-6">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <h6 class="fw-semibold mb-2">Attendance Status</h6>
-          {% if attendance_marked %}
-            <span class="badge bg-success">Attendance marked for today</span>
-          {% else %}
-            <span class="badge bg-danger">Attendance NOT marked yet</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Today's Advances</div>
-              <h4 class="mb-0">₹ {{ advances_today }}</h4>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- QUICK ACTIONS -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <h6 class="fw-semibold mb-3">Quick Actions</h6>
-      <div class="d-flex flex-wrap gap-2">
-        <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-primary">Manage Labours</a>
-        <a href="{{ url_for('manager_bp.mark_attendance') }}" class="btn btn-outline-success">Mark Attendance</a>
-        <a href="{{ url_for('manager_bp.add_payment') }}" class="btn btn-outline-warning">Add Advance</a>
-        <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-info">Advance History</a>
-        <a href="{{ url_for('manager_bp.manager_monthly_attendance') }}" class="btn btn-outline-primary">View Monthly Attendance</a>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Absent Labour Name -->
-  
-  {% if yesterday_absent_count > 0 %}
-  <div class="card border-warning mb-4">
-    <div class="card-body">
-
-      <div class="accordion" id="yesterdayAbsentAccordion">
-        <div class="accordion-item border-0">
-          <h2 class="accordion-header" id="headingAbsent">
-            <button class="accordion-button collapsed bg-transparent px-0 text-warning"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapseAbsent"
-                    aria-expanded="false"
-                    aria-controls="collapseAbsent">
-
-              ({{ yesterday_date.strftime('%d %b %Y') }}) Absent Yesterday
-              <span class="badge rounded-pill bg-danger ms-2">
-                {{ yesterday_absent_count }}
-              </span>
-
-            </button>
-          </h2>
-
-          <div id="collapseAbsent"
-              class="accordion-collapse collapse"
-              aria-labelledby="headingAbsent"
-              data-bs-parent="#yesterdayAbsentAccordion">
-
-            <div class="accordion-body px-0 pt-2">
-              <ul class="mb-2">
-                {% for l in yesterday_absent %}
-                  <li>{{ l.name }}</li>
-                {% endfor %}
-              </ul>
-
-              <small class="text-muted">
-                These labours did not work any shift yesterday.
-              </small>
-            </div>
-
-          </div>
-        </div>
-      </div>
+        <a href="{{ url_for('manager_bp.manager_monthly_attendance') }}" class="action-btn">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Monthly Log</span>
+        </a>
 
     </div>
-  </div>
-  {% endif %}
 
-
-  <!-- RECENT ACTIVITY -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-
-      <div class="accordion" id="recentActivityAccordion">
-        <div class="accordion-item border-0">
-
-          <h2 class="accordion-header" id="headingRecent">
-            <button class="accordion-button collapsed bg-transparent px-0 fw-semibold"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#collapseRecent"
-                    aria-expanded="false"
-                    aria-controls="collapseRecent">
-              Recent Activity
-            </button>
-          </h2>
-
-          <div id="collapseRecent"
-              class="accordion-collapse collapse"
-              aria-labelledby="headingRecent"
-              data-bs-parent="#recentActivityAccordion">
-
-            <div class="accordion-body px-0 pt-2">
-
-              {% if recent_attendance or recent_payments %}
-                <ul class="list-group list-group-flush">
-
-                  {% for a in recent_attendance %}
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span>
-                        {{ a.labour.name }}
+    {% if dashboard.recent_attendance or dashboard.recent_payments %}
+    <h6 class="fw-bold text-secondary text-uppercase small mb-3 ps-1">Recent Updates</h6>
+    <div class="activity-list">
+        
+        {% for a in dashboard.recent_attendance | default([]) %}
+        <div class="activity-item">
+            <div class="d-flex align-items-center">
+                <div class="activity-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold text-dark">{{ a.labour.name }}</div>
+                    <div class="small text-secondary">
                         {% if a.day_shift_flag or a.night_shift_flag %}
-                          marked <strong>Present</strong>
+                            Marked <span class="text-success fw-bold">Present</span>
                         {% else %}
-                          marked <strong>Absent</strong>
+                            Marked <span class="text-danger fw-bold">Absent</span>
                         {% endif %}
-                      </span>
-                      <small class="text-muted">
-                        {{ a.date.strftime('%d-%m-%Y') }}
-                      </small>
-                    </li>
-                  {% endfor %}
-
-                  {% for p in recent_payments %}
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span>
-                        ₹{{ p.advance }} advance → {{ p.labour.name }}
-                      </span>
-                      <small class="text-muted">
-                        {{ p.date.strftime('%d-%m-%Y') }}
-                      </small>
-                    </li>
-                  {% endfor %}
-
-                </ul>
-              {% else %}
-                <p class="text-muted mb-0">No recent activity.</p>
-              {% endif %}
-
+                    </div>
+                </div>
             </div>
-          </div>
-
+            <div class="small text-muted">{{ a.date.strftime('%d %b') }}</div>
         </div>
-      </div>
+        {% endfor %}
+
+        {% for p in dashboard.recent_payments | default([]) %}
+        <div class="activity-item">
+            <div class="d-flex align-items-center">
+                <div class="activity-icon bg-light text-success">
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold text-dark">₹{{ p.advance }} Paid</div>
+                    <div class="small text-secondary">To {{ p.labour.name }}</div>
+                </div>
+            </div>
+            <div class="small text-muted">{{ p.date.strftime('%d %b') }}</div>
+        </div>
+        {% endfor %}
 
     </div>
-  </div>
-
-
+    {% endif %}
 
 </div>
 {% endblock %}

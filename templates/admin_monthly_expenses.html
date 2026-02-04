@@ -1,101 +1,308 @@
 {% extends "base.html" %}
-{% block title %}Monthly Expenses{% endblock %}
+{% block title %}Monthly Expenses | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <h4 class="mb-3">Monthly Mess & Canteen Expenses</h4>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --success: #16a34a;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-  <!-- FILTER -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-md-4">
-      <label class="form-label">Select Site</label>
-      <select name="site_id" class="form-select" required>
-        <option value="">-- Select Site --</option>
-        {% for s in sites %}
-          <option value="{{ s.id }}" {% if selected_site==s.id %}selected{% endif %}>
-            {{ s.site_name }}
-          </option>
-        {% endfor %}
-      </select>
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FILTER BAR --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* --- INPUTS --- */
+    .form-control-sm {
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        padding: 0.4rem 0.8rem;
+    }
+    .input-group-text {
+        background-color: #f8fafc;
+        border-color: var(--border);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-save {
+        background-color: #eff6ff;
+        color: var(--primary);
+        border: 1px solid transparent;
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        width: 80px; /* Fixed width prevents jumping text */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-save:hover { background-color: #dbeafe; }
+    
+    .btn-save.success-state {
+        background-color: #dcfce7;
+        color: #166534;
+        pointer-events: none;
+    }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">Monthly Expenses</h4>
+        <p class="text-secondary small mb-0">Record Mess and Canteen deductions for labourers.</p>
     </div>
 
-    <div class="col-md-4">
-      <label class="form-label">Select Month</label>
-      <input type="month" name="month" class="form-control"
-             value="{{ selected_month }}" required>
-    </div>
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary mb-1">PROJECT SITE</label>
+                <select name="site_id" class="form-select" required>
+                    <option value="">-- Select Site --</option>
+                    {% for s in sites %}
+                        <option value="{{ s.id }}" {% if selected_site==s.id %}selected{% endif %}>
+                            {{ s.site_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-    <div class="col-md-4 d-flex align-items-end">
-      <button class="btn btn-primary w-100">Load</button>
-    </div>
-  </form>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary mb-1">SELECT MONTH</label>
+                <input type="month" name="month" class="form-control" value="{{ selected_month }}" required>
+            </div>
 
-  {% if labours %}
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Labour</th>
-            <th>Mess ₹</th>
-            <th>Canteen ₹</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for l in labours %}
-            {% set e = expenses_map.get(l.id) %}
-            <tr data-labour="{{ l.id }}">
-              <td>{{ loop.index }}</td>
-              <td>{{ l.name }}</td>
-              <td>
-                <input type="number" class="form-control mess"
-                       value="{{ e.mess_amount if e else 0 }}">
-              </td>
-              <td>
-                <input type="number" class="form-control canteen"
-                       value="{{ e.canteen_amount if e else 0 }}">
-              </td>
-              <td>
-                <button class="btn btn-success btn-sm save-btn">Save</button>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            <div class="col-md-4">
+                <button class="btn-primary-custom">
+                    <i class="fa-solid fa-rotate me-2"></i> Load Data
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if labours %}
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="35%">Labour Name</th>
+                        <th width="25%">Mess Deduction</th>
+                        <th width="25%">Canteen Deduction</th>
+                        <th width="10%" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in labours %}
+                        {% set e = expenses_map.get(l.id) %}
+                        <tr data-labour="{{ l.id }}">
+                            <td class="text-secondary small">{{ loop.index }}</td>
+                            
+                            <td class="fw-bold text-dark">
+                                {{ l.name }}
+                            </td>
+
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control mess" 
+                                           value="{{ e.mess_amount if e else 0 }}" min="0" step="1">
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control canteen" 
+                                           value="{{ e.canteen_amount if e else 0 }}" min="0" step="1">
+                                </div>
+                            </td>
+
+                            <td class="text-center">
+                                <button class="btn-save save-btn">
+                                    Save
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
-  {% endif %}
+    {% elif selected_site %}
+    <div class="text-center py-5 bg-white rounded-3 border">
+        <div class="text-secondary opacity-25 mb-3">
+            <i class="fa-solid fa-utensils fs-1"></i>
+        </div>
+        <h6 class="fw-bold text-dark">No Labours Found</h6>
+        <p class="text-secondary small">There are no active labourers assigned to this site.</p>
+    </div>
+    {% endif %}
 
 </div>
 
 <script>
 document.querySelectorAll('.save-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    const row = this.closest('tr');
+    btn.addEventListener('click', function () {
+        const row = this.closest('tr');
+        const btnElement = this;
+        
+        // Visual Feedback - Loading
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        
+        const payload = {
+            labour_id: row.dataset.labour,
+            site_id: {{ selected_site if selected_site else 'null' }},
+            month: "{{ selected_month }}",
+            mess: row.querySelector('.mess').value || 0,
+            canteen: row.querySelector('.canteen').value || 0
+        };
 
-    fetch('/admin/monthly-expenses/save', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        labour_id: row.dataset.labour,
-        site_id: {{ selected_site }},
-        month: "{{ selected_month }}",
-        mess: row.querySelector('.mess').value || 0,
-        canteen: row.querySelector('.canteen').value || 0
-      })
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.status === 'ok') {
-        alert('Saved');
-      } else {
-        alert('Error saving data');
-      }
+        fetch('/admin/monthly-expenses/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'ok') {
+                // Success State
+                btnElement.classList.add('success-state');
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
+                
+                // Revert after 2 seconds
+                setTimeout(() => {
+                    btnElement.classList.remove('success-state');
+                    btnElement.innerHTML = 'Save';
+                }, 2000);
+            } else {
+                alert('Error: ' + d.message);
+                btnElement.innerHTML = 'Retry';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Network error occurred');
+            btnElement.innerHTML = 'Save';
+        });
     });
-  });
 });
 </script>
 

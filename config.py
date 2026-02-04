@@ -6,7 +6,9 @@ class Config:
     # --------------------
     # CORE SETTINGS
     # --------------------
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-me"
+    #SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-me" ---<<<<<<before code line
+    SECRET_KEY = os.environ.get("SECRET_KEY", "local-dev-only")
+
     DEBUG = False
     TESTING = False
 

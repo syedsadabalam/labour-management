@@ -2,6 +2,8 @@ import os
 from PIL import Image
 from werkzeug.utils import secure_filename
 from flask import current_app
+from extensions import db
+import re
 
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
 MAX_WIDTH = 1200

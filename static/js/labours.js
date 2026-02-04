@@ -74,6 +74,7 @@ function fillModal(data) {
   setText("ls-phone", data.labour.phone);
   setText("ls-site", data.labour.site);
 
+  setText("as-morning", data.attendance_summary.morning_shifts);
   setText("as-day", data.attendance_summary.day_shifts);
   setText("as-night", data.attendance_summary.night_shifts);
   setText("as-total", data.attendance_summary.total_shifts);

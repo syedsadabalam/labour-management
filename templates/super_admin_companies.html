@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Admin – Companies</title>
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 40px;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-active {
+            color: #166534;
+            background: #dcfce7;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-inactive {
+            color: #991b1b;
+            background: #fee2e2;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Super Admin · Companies</h1>
+        <a href="{{ url_for('admin_bp.super_admin_create_company') }}" class="btn">
+            + Create Company
+        </a>
+        
+        <a href="{{ url_for('auth.logout') }}"
+           style="
+               background:#ef4444;
+               color:#fff;
+               text-decoration:none;
+               padding:10px 14px;
+               border-radius:6px;
+               font-size:14px;
+               font-weight:500;
+           ">
+            Logout
+        </a>
+    
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Company</th>
+                    <th>Plan</th>
+                    <th>Plan Expiry</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in companies %}
+                <tr>
+                    <td class="muted">{{ c.id }}</td>
+                    <td><strong>{{ c.company_name }}</strong></td>
+                    <td>{{ c.plan.name if c.plan else '-' }}</td>
+                    <td class="muted">
+                        {{ c.plan_expires_at if c.plan_expires_at else '—' }}
+                    </td>
+                    <td>
+                        {% if c.is_active %}
+                            <span class="status-active">Active</span>
+                        {% else %}
+                            <span class="status-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

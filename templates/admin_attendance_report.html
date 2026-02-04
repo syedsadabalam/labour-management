@@ -1,159 +1,361 @@
 {% extends "base.html" %}
-{% block page_title %}Attendance Report{% endblock %}
+{% block title %}Attendance Report | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- FILTERS -->
-  <form method="get" class="card p-3 mb-4 shadow-sm">
-    <div class="row g-3 align-items-end">
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Site</label>
-        <select name="site_id" class="form-select" required>
-          <option value="">Select</option>
-          {% for s in sites %}
-            <option value="{{ s.id }}" {% if filters.site_id == s.id %}selected{% endif %}>
-              {{ s.site_name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Start Date</label>
-        <input type="date" name="start_date" class="form-control"
-               value="{{ filters.start_date }}">
-      </div>
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">End Date</label>
-        <input type="date" name="end_date" class="form-control"
-               value="{{ filters.end_date }}">
-      </div>
+    /* --- FILTER CARD --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Day Shift</label>
-        <select name="day_shift" class="form-select">
-          <option value="all">All</option>
-          <option value="present" {% if filters.day_shift=='present' %}selected{% endif %}>Present</option>
-          <option value="absent" {% if filters.day_shift=='absent' %}selected{% endif %}>Absent</option>
-        </select>
-      </div>
+    /* --- KPI CARDS --- */
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+        box-shadow: var(--shadow-sm);
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .bg-morning { background-color: #fff7ed; color: #ea580c; }
+    .bg-day { background-color: #eff6ff; color: #2563eb; }
+    .bg-night { background-color: #f5f3ff; color: #7c3aed; }
+    .bg-total { background-color: #f0fdf4; color: #16a34a; }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Night Shift</label>
-        <select name="night_shift" class="form-select">
-          <option value="all">All</option>
-          <option value="present" {% if filters.night_shift=='present' %}selected{% endif %}>Present</option>
-          <option value="absent" {% if filters.night_shift=='absent' %}selected{% endif %}>Absent</option>
-        </select>
-      </div>
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold">Worked Type</label>
-        <select name="worked_type" class="form-select">
-          <option value="any">Any</option>
-          <option value="any_worked" {% if filters.worked_type=='any_worked' %}selected{% endif %}>
-            Worked (Day or Night)
-          </option>
-          <option value="day" {% if filters.worked_type=='day' %}selected{% endif %}>Day Worked</option>
-          <option value="night" {% if filters.worked_type=='night' %}selected{% endif %}>Night Worked</option>
-          <option value="both" {% if filters.worked_type=='both' %}selected{% endif %}>Both Worked</option>
-        </select>
-      </div>
+    /* --- STATUS BADGES --- */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .status-absent { background-color: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+    .status-present-morning { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+    .status-present-day { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+    .status-present-night { background-color: #f5f3ff; color: #6d28d9; border: 1px solid #ede9fe; }
 
-      <div class="col-md-12 text-end">
-        <button class="btn btn-primary">
-          <i class="fa-solid fa-magnifying-glass"></i> Search
-        </button>
-      </div>
-    </div>
-  </form>
+    /* --- COMPONENTS --- */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
 
-  {% if not filters.site_id %}
-    <div class="alert alert-info">
-      Please select a site and date range to view attendance.
-    </div>
-  {% endif %}
+</style>
 
-  <!-- KPIs -->
-  {% if filters.site_id %}
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Day Present</div>
-          <h4 class="text-success">{{ kpis.day_present }}</h4>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Night Present</div>
-          <h4 class="text-info">{{ kpis.night_present }}</h4>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Unique Labours</div>
-          <h4>{{ kpis.unique_labours }}</h4>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- TABLE -->
-  {% if records %}
-  <div class="card shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>Labour</th>
-            <th>Phone</th>
-            <th>Day Shift</th>
-            <th>Night Shift</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in records %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ r.date.strftime('%d-%m-%Y') }}</td>
-            <td>{{ r.labour.name }}</td>
-            <td>{{ r.labour.phone }}</td>
-            <td>
-              {% if r.day_shift_flag %}
-                <span class="badge bg-success">Present</span>
-              {% else %}
-                <span class="badge bg-danger">Absent</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if r.night_shift_flag %}
-                <span class="badge bg-success">Present</span>
-              {% else %}
-                <span class="badge bg-danger">Absent</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% elif filters.site_id %}
-    <div class="text-center text-muted py-4">
-      No records found for selected filters.
-    </div>
-  {% endif %}
-
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom active">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
 </div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Attendance Tracker</h4>
+            <p class="text-secondary small mb-0">Daily presence logs across all shifts.</p>
+        </div>
+        {% if filters.site_id %}
+        <button class="btn btn-outline-secondary btn-sm bg-white" title="Download CSV">
+            <i class="fa-solid fa-download me-2"></i>Export Data
+        </button>
+        {% endif %}
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">PROJECT SITE</label>
+                <select name="site_id" class="form-select" required>
+                    <option value="">Select Site...</option>
+                    {% for s in sites %}
+                        <option value="{{ s.id }}" {% if filters.site_id == s.id %}selected{% endif %}>
+                            {{ s.site_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-secondary mb-1">START DATE</label>
+                <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-secondary mb-1">END DATE</label>
+                <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">SHIFT FILTER</label>
+                <select name="worked_type" class="form-select">
+                    <option value="any">Show All Records</option>
+                    <option value="any_worked">Worked (Any Shift)</option>
+                    <option value="morning">Morning Only</option>
+                    <option value="day">Day Only</option>
+                    <option value="night">Night Only</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn-primary-custom">
+                    <i class="fa-solid fa-filter me-2"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if not filters.site_id %}
+        <div class="text-center py-5 border rounded-3 bg-white border-dashed" style="border-style: dashed !important;">
+            <div class="text-secondary opacity-25 mb-3">
+                <i class="fa-regular fa-calendar-days fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Site Selected</h6>
+            <p class="text-secondary small">Please select a project site to view attendance records.</p>
+        </div>
+    {% endif %}
+
+    {% if filters.site_id %}
+    
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div>
+                    <h6 class="text-secondary small fw-bold text-uppercase mb-1">Morning Shift</h6>
+                    <h2 class="mb-0 fw-bold text-dark">{{ kpis.morning_present }}</h2>
+                </div>
+                <div class="stat-icon bg-morning"><i class="fa-regular fa-sun"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div>
+                    <h6 class="text-secondary small fw-bold text-uppercase mb-1">Day Shift</h6>
+                    <h2 class="mb-0 fw-bold text-dark">{{ kpis.day_present }}</h2>
+                </div>
+                <div class="stat-icon bg-day"><i class="fa-solid fa-sun"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div>
+                    <h6 class="text-secondary small fw-bold text-uppercase mb-1">Night Shift</h6>
+                    <h2 class="mb-0 fw-bold text-dark">{{ kpis.night_present }}</h2>
+                </div>
+                <div class="stat-icon bg-night"><i class="fa-solid fa-moon"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div>
+                    <h6 class="text-secondary small fw-bold text-uppercase mb-1">Total Labours</h6>
+                    <h2 class="mb-0 fw-bold text-dark">{{ kpis.unique_labours }}</h2>
+                </div>
+                <div class="stat-icon bg-total"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </div>
+    </div>
+
+    {% if records %}
+    <div class="table-card mb-4">
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Date</th>
+                        <th>Labour Name</th>
+                        <th>Phone</th>
+                        <th class="text-center">Morning</th>
+                        <th class="text-center">Day</th>
+                        <th class="text-center">Night</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="text-secondary small">{{ loop.index }}</td>
+                        <td class="fw-medium text-dark">{{ r.date.strftime('%d %b, %Y') }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ r.labour.name }}</div>
+                        </td>
+                        <td class="text-secondary font-monospace small">{{ r.labour.phone }}</td>
+                        
+                        <td class="text-center">
+                            {% if r.morning_shift_flag %}
+                                <span class="status-badge status-present-morning"><i class="fa-regular fa-circle-check"></i> Present</span>
+                            {% else %}
+                                <span class="status-badge status-absent">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if r.day_shift_flag %}
+                                <span class="status-badge status-present-day"><i class="fa-solid fa-check"></i> Present</span>
+                            {% else %}
+                                <span class="status-badge status-absent">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if r.night_shift_flag %}
+                                <span class="status-badge status-present-night"><i class="fa-solid fa-moon"></i> Present</span>
+                            {% else %}
+                                <span class="status-badge status-absent">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if pagination and pagination.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="text-secondary small">
+            Showing records {{ (pagination.page - 1) * pagination.per_page + 1 }} to {{ (pagination.page - 1) * pagination.per_page + pagination.items|length }}
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin_bp.attendance_report', page=pagination.prev_num, **filters) }}">Previous</a>
+                </li>
+                
+                <li class="page-item disabled"><span class="page-link text-dark">Page {{ pagination.page }} of {{ pagination.pages }}</span></li>
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin_bp.attendance_report', page=pagination.next_num, **filters) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-3 border">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-filter-circle-xmark fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Records Found</h6>
+            <p class="text-secondary small">Try adjusting your date range or filters.</p>
+        </div>
+    {% endif %} {% endif %} </div>
 {% endblock %}

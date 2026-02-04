@@ -11,7 +11,17 @@
       <h4 class="mb-0">Labours</h4>
       <small class="text-muted">Labours assigned to your site</small>
     </div>
-  </div>
+
+    <div>
+      <a href="{{ url_for('manager_bp.manager_dashboard') }}" class="btn btn-primary btn-sm shadow-sm">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+      </a>
+    <a href="{{ url_for('manager_bp.manager_add_labour') }}" 
+       class="btn btn-primary btn-sm shadow-sm">
+       <i class="fa fa-user-plus me-1"></i> Add Labour
+    </a>
+    </div>
+</div>
 
   <!-- SEARCH -->
   <form method="get" class="card p-3 mb-3">
@@ -27,9 +37,10 @@
       </div>
       <div class="col-md-6">
         <button class="btn btn-primary">Search</button>
-        <a href="{{ url_for('manager_bp.labours') }}" class="btn btn-outline-secondary">Reset</a>
+        <a href="{{ url_for('manager_bp.manager_labours') }}" class="btn btn-outline-secondary">Reset</a>
       </div>
     </div>
+
   </form>
 
   <!-- TABLE -->
@@ -174,6 +185,7 @@
                   Attendance Summary
                 </div>
                 <div class="card-body">
+                  <div>Total Morning Shifts: <b id="as-morning"></b></div>
                   <div>Total Day Shifts: <b id="as-day"></b></div>
                   <div>Total Night Shifts: <b id="as-night"></b></div>
                   <div>Total Shifts: <b id="as-total"></b></div>

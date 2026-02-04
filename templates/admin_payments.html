@@ -1,187 +1,316 @@
 {% extends "base.html" %}
-{% block title %}Payments{% endblock %}
+{% block title %}Advance Payment History | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- Header -->
-  <div class="row mb-3">
-    <div class="col-8">
-      <h4 class="mb-0">Payments</h4>
-      <p class="text-muted small">Advance & payment history</p>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --danger: #ef4444;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FILTER BAR --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* --- TYPOGRAPHY UTILS --- */
+    .font-mono {
+        font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+        letter-spacing: -0.5px;
+    }
+    .text-amount {
+        color: var(--danger); /* Advances are usually negative/red in accounting */
+        font-weight: 600;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-outline-custom {
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-secondary);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.2s;
+    }
+    .btn-outline-custom:hover { background-color: #f8fafc; border-color: #cbd5e1; }
+
+    .btn-action-icon {
+        padding: 6px;
+        color: var(--text-secondary);
+        border-radius: 6px;
+        transition: all 0.2s;
+        border: none;
+        background: transparent;
+    }
+    .btn-action-icon:hover { background-color: #f1f5f9; color: var(--primary); }
+    .btn-action-icon.danger:hover { background-color: #fee2e2; color: #dc2626; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_payments') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-clock-rotate-left"></i> Payment History
+    </a>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Advance Payments</h4>
+            <p class="text-secondary small mb-0">Track all cash advances given to labourers.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_bp.admin_add_payment') }}" class="btn-primary-custom" style="width: auto;">
+                <i class="fa-solid fa-plus me-2"></i> Record New Advance
+            </a>
+        </div>
     </div>
-    <div class="col-4 text-end">
-      <a href="{{ url_for('admin_bp.admin_add_payment') }}"
-         class="btn btn-sm btn-success">
-        + Add Payment
-      </a>
-      <a href="{{ url_for('admin_bp.admin_dashboard') }}"
-         class="btn btn-sm btn-outline-secondary ms-2">
-        Dashboard
-      </a>
-    </div>
-  </div>
 
-  <!-- FILTER BAR -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <form method="get" class="row g-2 align-items-end">
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary mb-1">SEARCH LABOUR</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-secondary">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="labour" value="{{ request.args.get('labour', '') }}" 
+                           class="form-control border-start-0 ps-0" placeholder="e.g. Rahul Kumar">
+                </div>
+            </div>
 
-        <!-- Labour Name -->
-        <div class="col-md-4">
-          <label class="form-label small">Labour Name</label>
-          <input type="text"
-                name="labour"
-                class="form-control"
-                placeholder="e.g. Labour name"
-                value="{{ request.args.get('labour','') }}">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">FILTER BY SITE</label>
+                <select name="site_id" class="form-select">
+                    <option value="">All Sites</option>
+                    {% for site in sites %}
+                        <option value="{{ site.id }}" {% if request.args.get('site_id') == site.id|string %}selected{% endif %}>
+                            {{ site.site_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">FILTER BY MONTH</label>
+                <input type="month" name="month" class="form-control" 
+                       value="{{ request.args.get('month', current_month) }}">
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn-primary-custom">Filter</button>
+            </div>
         </div>
+    </form>
 
-        <!-- Site -->
-        <div class="col-md-4">
-          <label class="form-label small">Site</label>
-          <select name="site_id" class="form-select">
-            <option value="">All Sites</option>
-            {% for site in sites %}
-              <option value="{{ site.id }}"
-                {% if request.args.get('site_id') == site.id|string %}selected{% endif %}>
-                {{ site.site_name }}
-              </option>
-            {% endfor %}
-          </select>
+    <div class="table-card">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="15%">Date</th>
+                        <th width="20%">Labour Name</th>
+                        <th width="15%">Site</th>
+                        <th width="15%" class="text-end">Amount (₹)</th>
+                        <th width="20%">Note</th>
+                        <th width="10%" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td class="text-secondary small">
+                            {{ (pagination.page - 1) * pagination.per_page + loop.index }}
+                        </td>
+                        
+                        <td class="font-mono text-dark">
+                            {{ payment.date or '-' }}
+                        </td>
+
+                        <td class="fw-bold text-dark">
+                            {{ payment.labour.name if payment.labour else '-' }}
+                        </td>
+
+                        <td class="text-secondary small">
+                            <i class="fa-solid fa-location-dot me-1 opacity-50"></i>
+                            {{ payment.site.site_name if payment.site else '-' }}
+                        </td>
+
+                        <td class="text-end font-mono text-amount">
+                            ₹{{ "%.2f"|format(payment.advance or 0) }}
+                        </td>
+
+                        <td class="text-secondary small fst-italic">
+                            {{ payment.note or '-' }}
+                        </td>
+
+                        <td class="text-end">
+                            <a href="{{ url_for('admin_bp.admin_edit_payment', payment_id=payment.id) }}" 
+                               class="btn-action-icon" title="Edit Record">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            
+                            <form action="{{ url_for('admin_bp.delete_payment', payment_id=payment.id) }}" 
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this payment record?');">
+                                <button class="btn-action-icon danger" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-
-        <!-- Month -->
-        <div class="col-md-3">
-          <label class="form-label small">Month</label>
-          <input type="month"
-                name="month"
-                class="form-control"
-                value="{{ request.args.get('month', current_month) }}">
-        </div>
-
-        <!-- Submit -->
-        <div class="col-md-1 d-grid">
-          <button class="btn btn-primary btn-sm">Filter</button>
-        </div>
-
-      </form>
-    </div>
-  </div>
-
-
-  <!-- Table -->
-  <div class="card">
-    <div class="card-body p-0">
-      {% if payments %}
-      <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>#</th>
-              <th>Date</th>
-              <th>Labour</th>
-              <th>Site</th>
-              <th>Advance</th>
-             
-              <th>Note</th>
-              <th style="width:180px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for payment in payments %}
-            <tr>
-              <td>
-                {{ (pagination.page - 1) * pagination.per_page + loop.index }}
-              </td>
-
-              <td>{{ payment.date or '-' }}</td>
-
-              <td>
-                {{ payment.labour.name if payment.labour else '-' }}
-              </td>
-
-              <td>
-                {{ payment.site.site_name if payment.site else '-' }}
-              </td>
-
-              <td>
-                ₹{{ "%.2f"|format(payment.advance or 0) }}
-              </td>
-
-
-              <td>{{ payment.note or '-' }}</td>
-
-             <td>
-                <a href="{{ url_for('admin_bp.admin_edit_payment', payment_id=payment.id) }}"
-                  class="btn btn-sm btn-outline-primary">Edit</a>
-
-                <form action="{{ url_for('admin_bp.delete_payment', payment_id=payment.id) }}"
-                      method="post" style="display:inline;">
-                  <button type="submit"
-                          class="btn btn-sm btn-danger"
-                          onclick="return confirm('Delete this payment?')">
-                    Delete
-                  </button>
-                </form>
-              </td>
-
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        
         {% if pagination.pages > 1 %}
-        <nav class="mt-3">
-          <ul class="pagination justify-content-center pagination-sm">
-
-            <!-- Previous -->
-            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-              <a class="page-link"
-                href="{{ url_for('admin_bp.admin_payments',
-                                  page=pagination.prev_num,
-                                  labour=request.args.get('labour'),
-                                  site_id=request.args.get('site_id'),
-                                  month=request.args.get('month')) }}">
-                Prev
-              </a>
-            </li>
-
-            <!-- Page numbers -->
-            {% for p in range(1, pagination.pages + 1) %}
-              <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                <a class="page-link"
-                  href="{{ url_for('admin_bp.admin_payments',
-                                    page=p,
-                                    labour=request.args.get('labour'),
-                                    site_id=request.args.get('site_id'),
-                                    month=request.args.get('month')) }}">
-                  {{ p }}
-                </a>
-              </li>
-            {% endfor %}
-
-            <!-- Next -->
-            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-              <a class="page-link"
-                href="{{ url_for('admin_bp.admin_payments',
-                                  page=pagination.next_num,
-                                  labour=request.args.get('labour'),
-                                  site_id=request.args.get('site_id'),
-                                  month=request.args.get('month')) }}">
-                Next
-              </a>
-            </li>
-
-          </ul>
-        </nav>
+        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+            <div class="text-secondary small">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_bp.admin_payments', page=pagination.prev_num, labour=request.args.get('labour'), site_id=request.args.get('site_id'), month=request.args.get('month')) }}">Previous</a>
+                    </li>
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_bp.admin_payments', page=pagination.next_num, labour=request.args.get('labour'), site_id=request.args.get('site_id'), month=request.args.get('month')) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
         {% endif %}
 
-      </div>
-      {% else %}
-        <div class="p-4 text-center text-muted">No payments recorded.</div>
-      {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-money-bill-transfer fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Payments Found</h6>
+            <p class="text-secondary small">No advance payments match your current filters.</p>
+        </div>
+        {% endif %}
     </div>
-  </div>
 
 </div>
 {% endblock %}

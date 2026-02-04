@@ -1,232 +1,388 @@
 {% extends "base.html" %}
-{% block title %}Edit Labour{% endblock %}
+{% block title %}Edit Labour Profile | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- Header -->
-  <div class="row mb-3">
-    <div class="col-8">
-      <h4 class="mb-0">Edit Labour</h4>
-      <p class="text-muted small">Update labour details</p>
-    </div>
-    <div class="col-4 text-end">
-      <a href="{{ url_for('admin_bp.admin_labours') }}"
-         class="btn btn-sm btn-outline-secondary">
-        Back to Labours
-      </a>
-    </div>
-  </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-  <!-- Form -->
-  <div class="card">
-    <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
-        <!-- Gate Pass ID -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Gate Pass ID</label>
-            <input type="text"
-                  name="gate_pass_id"
-                  class="form-control"
-                  value="{{ labour.gate_pass_id or '' }}"
-                  placeholder="Enter gate pass ID">
-          </div>
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-        <div class="row">
+    /* --- FORM CARD --- */
+    .edit-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 800px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
 
-          
-          <!-- Name -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Labour Name</label>
-            <input type="text"
-                   name="name"
-                   class="form-control"
-                   value="{{ labour.name }}"
-                   required>
-          </div>
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+    
+    .form-control[type="file"] {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        background: #f8fafc;
+    }
 
-          <!-- Phone -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Phone No</label>
-            <input type="text"
-              name="phone"
-              class="form-control"
-              value="{{ labour.phone }}"
-              pattern="[0-9]{10}"
-              maxlength="10"
-              title="Phone number must be exactly 10 digits"
-              required>
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
 
-          </div>
+    /* Image Preview Styling */
+    .img-preview-container {
+        position: relative;
+        display: inline-block;
+        margin-top: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 4px;
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+    }
+    .img-preview {
+        max-height: 120px;
+        border-radius: 4px;
+        display: block;
+    }
+    .preview-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--success);
+        color: white;
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_labours') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-helmet-safety"></i> Labour List
+    </a>
+</div>
+
+<div class="container-fluid py-5 px-4">
+
+    <div class="edit-card">
+        
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Edit Labour Profile</h5>
+            <p class="text-secondary small mb-0">Update personal details, documents, and site assignment.</p>
         </div>
 
-        <div class="row">
-          <!-- Bank Account -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Bank Account No</label>
-            <input type="text"
-                name="bank_account"
-                class="form-control"
-                value="{{ labour.bank_account }}"
-                pattern="[0-9]+"
-                title="Bank account number must contain digits only"
-                required>
+        <div class="card-body-custom">
+            <form method="post" enctype="multipart/form-data">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input type="text" name="name" class="form-control border-start-0 ps-0" value="{{ labour.name }}" required>
+                        </div>
+                    </div>
 
-          </div>
-
-          <!-- IFSC -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">IFSC Code</label>
-            <input type="text"
-                   name="ifsc_code"
-                   class="form-control"
-                   value="{{ labour.ifsc_code or '' }}">
-          </div>
-        </div>
-
-        <div class="row">
-          <!-- Site -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Site</label>
-            <select name="site_id" class="form-select">
-              <option value="">-- Select Site --</option>
-              {% for site in sites %}
-                <option value="{{ site.id }}"
-                  {% if labour.site_id == site.id %}selected{% endif %}>
-                  {{ site.site_name or site.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Daily Wage -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Daily Wage</label>
-            <input type="number"
-                   name="daily_wage"
-                   class="form-control"
-                   step="0.01"
-                   value="{{ labour.daily_wage or '' }}">
-          </div>
-        </div>
-
-        <hr>
-
-          <div class="row">
-
-            <!-- Labour Photo -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Labour Photo (max 1MB)</label>
-              <input type="file"
-                    name="photo"
-                    class="form-control image-input"
-                    accept="image/*"
-                    capture="environment">
-
-              {% if labour.photo_path %}
-                <div class="mt-2">
-                  <img src="{{ url_for('static', filename=labour.photo_path) }}"
-                      alt="Labour Photo"
-                      class="img-thumbnail"
-                      style="max-height: 150px;">
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass ID</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-id-badge"></i>
+                            </span>
+                            <input type="text" name="gate_pass_id" class="form-control border-start-0 ps-0" value="{{ labour.gate_pass_id or '' }}">
+                        </div>
+                    </div>
                 </div>
-              {% endif %}
-            </div>
 
-            <!-- Aadhaar Front -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Aadhaar Front (max 1MB)</label>
-              <input type="file"
-                    name="aadhaar_front"
-                    class="form-control image-input"
-                    accept="image/*"
-                    capture="environment">
-
-              {% if labour.aadhaar_front_path %}
-                <div class="mt-2">
-                  <img src="{{ url_for('static', filename=labour.aadhaar_front_path) }}"
-                      alt="Aadhaar Front"
-                      class="img-thumbnail"
-                      style="max-height: 150px;">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-phone"></i>
+                            </span>
+                            <input type="text" name="phone" class="form-control border-start-0 ps-0" value="{{ labour.phone }}" required 
+                                   pattern="[0-9]{10}" maxlength="10" inputmode="numeric" 
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Assigned Site</label>
+                        <select name="site_id" class="form-select">
+                            <option value="">-- Select Site --</option>
+                            {% for site in sites %}
+                                <option value="{{ site.id }}" {% if labour.site_id == site.id %}selected{% endif %}>
+                                    {{ site.site_name or site.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-              {% endif %}
-            </div>
 
-            <!-- Aadhaar Back -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Aadhaar Back (max 1MB)</label>
-              <input type="file"
-                    name="aadhaar_back"
-                    class="form-control image-input"
-                    accept="image/*"
-                    capture="environment">
+                <div class="section-title">Financial Details</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Daily Wage (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">₹</span>
+                            <input type="number" name="daily_wage" class="form-control border-start-0 ps-0" value="{{ labour.daily_wage or '' }}" step="0.01">
+                        </div>
+                    </div>
 
-              {% if labour.aadhaar_back_path %}
-                <div class="mt-2">
-                  <img src="{{ url_for('static', filename=labour.aadhaar_back_path) }}"
-                      alt="Aadhaar Back"
-                      class="img-thumbnail"
-                      style="max-height: 150px;">
+                    <div class="col-md-4">
+                        <label class="form-label">Bank Account No</label>
+                        <input type="text" name="bank_account" class="form-control" value="{{ labour.bank_account }}" 
+                               inputmode="numeric" pattern="[0-9]{9,18}" minlength="9" maxlength="18" 
+                               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" name="ifsc_code" class="form-control text-uppercase" value="{{ labour.ifsc_code or '' }}">
+                    </div>
                 </div>
-              {% endif %}
-            </div>
-            
-            <div class="col-md-6">
-              <label class="form-label">Gate Pass Front (max 1MB)</label>
-              <input type="file" name="gate_pass_front" class="form-control image-input"
-                accept="image/*"
-                capture="environment">
-              {% if labour.gate_pass_front_path %}
-                <img src="{{ url_for('static', filename=labour.gate_pass_front_path) }}"
-                    class="img-thumbnail mt-2"
-                    style="max-height:140px;">
-              {% endif %}
-            </div>
 
-            <div class="col-md-6">
-              <label class="form-label">Gate Pass Back (max 1MB)</label>
-              <input type="file" name="gate_pass_back" class="form-control image-input"
-                accept="image/*"
-                capture="environment">
-              {% if labour.gate_pass_back_path %}
-                <img src="{{ url_for('static', filename=labour.gate_pass_back_path) }}"
-                    class="img-thumbnail mt-2"
-                    style="max-height:140px;">
-              {% endif %}
-            </div>
+                <div class="section-title">Documents (Update if needed)</div>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Labour Photo</label>
+                        <input type="file" name="photo" class="form-control image-input" accept="image/*" capture="environment">
+                        {% if labour.photo_path %}
+                            <div class="img-preview-container">
+                                <span class="preview-badge">Current</span>
+                                <img src="{{ url_for('static', filename=labour.photo_path) }}" class="img-preview" alt="Photo">
+                            </div>
+                        {% endif %}
+                    </div>
 
+                    <div class="col-md-6">
+                        <label class="form-label">Aadhaar Card (Front)</label>
+                        <input type="file" name="aadhaar_front" class="form-control image-input" accept="image/*" capture="environment">
+                        {% if labour.aadhaar_front_path %}
+                            <div class="img-preview-container">
+                                <span class="preview-badge">Current</span>
+                                <img src="{{ url_for('static', filename=labour.aadhaar_front_path) }}" class="img-preview" alt="Aadhaar Front">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
 
-          </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Aadhaar Card (Back)</label>
+                        <input type="file" name="aadhaar_back" class="form-control image-input" accept="image/*" capture="environment">
+                        {% if labour.aadhaar_back_path %}
+                            <div class="img-preview-container">
+                                <span class="preview-badge">Current</span>
+                                <img src="{{ url_for('static', filename=labour.aadhaar_back_path) }}" class="img-preview" alt="Aadhaar Back">
+                            </div>
+                        {% endif %}
+                    </div>
 
-        <hr>
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass (Front)</label>
+                        <input type="file" name="gate_pass_front" class="form-control image-input" accept="image/*" capture="environment">
+                        {% if labour.gate_pass_front_path %}
+                            <div class="img-preview-container">
+                                <span class="preview-badge">Current</span>
+                                <img src="{{ url_for('static', filename=labour.gate_pass_front_path) }}" class="img-preview" alt="Gate Pass Front">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
 
-        <!-- Active -->
-        <div class="mb-3 form-check">
-          <input type="checkbox"
-                 name="is_active"
-                 class="form-check-input"
-                 id="activeCheck"
-                 {% if labour.is_active %}checked{% endif %}>
-          <label class="form-check-label" for="activeCheck">
-            Active
-          </label>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass (Back)</label>
+                        <input type="file" name="gate_pass_back" class="form-control image-input" accept="image/*" capture="environment">
+                        {% if labour.gate_pass_back_path %}
+                            <div class="img-preview-container">
+                                <span class="preview-badge">Current</span>
+                                <img src="{{ url_for('static', filename=labour.gate_pass_back_path) }}" class="img-preview" alt="Gate Pass Back">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-5">
+                    <input class="form-check-input" type="checkbox" id="activeCheck" name="is_active" {% if labour.is_active %}checked{% endif %}>
+                    <label class="form-check-label fw-semibold text-secondary" for="activeCheck">Active Status</label>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_labours') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
         </div>
-
-        <!-- Actions -->
-        <div class="mt-4">
-          <button type="submit" class="btn btn-primary">
-            Update Labour
-          </button>
-          <a href="{{ url_for('admin_bp.admin_labours') }}"
-             class="btn btn-outline-secondary ms-2">
-            Cancel
-          </a>
-        </div>
-
-      </form>
     </div>
-  </div>
 
 </div>
+
+<div class="modal fade" id="imageCropModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-crop-simple me-2"></i>Adjust Image</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 bg-black d-flex align-items-center justify-content-center" style="height: 60vh;">
+                <img id="cropperImage" src="" style="max-width: 100%; max-height: 100%; display: block;">
+            </div>
+            <div class="modal-footer bg-light border-top-0 justify-content-between">
+                <div class="text-muted small"><i class="fa-solid fa-circle-info me-1"></i> Scroll to zoom</div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="cropConfirmBtn" class="btn btn-primary px-4 fw-semibold">Crop & Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CropperJS -->
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+
+<!-- Your logic (ONLY ONCE) -->
+<script src="{{ url_for('static', filename='js/image-cropper.js') }}"></script>
+
+
 {% endblock %}

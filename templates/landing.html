@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ApnaLabour | Smart Labour Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+  /* --- TRUST & STATS SECTION --- */
+    .trust-section {
+      background: #ffffff;
+      padding: 80px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .trust-content h2 {
+      font-size: 2.25rem;
+      margin-bottom: 1rem;
+      color: var(--secondary);
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Visual Map Container */
+    .map-visual {
+      background: #f8fafc; /* Light bg */
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 40px;
+      position: relative;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Abstract Map Dots (Visualizing "All Over India") */
+    .map-dots {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+    }
+    
+    /* Creating a simple abstract "connected" visual with CSS */
+    .map-dots i {
+      font-size: 10rem;
+      color: #cbd5e1; /* Light gray map icon */
+    }
+
+    /* Floating Location Pins (Animation) */
+    .pin {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: var(--accent);
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      animation: pulse 2s infinite;
+    }
+    
+    /* Positioning abstract pins around the center icon */
+    .pin:nth-child(1) { top: 30%; left: 40%; animation-delay: 0s; } /* North */
+    .pin:nth-child(2) { top: 60%; left: 30%; animation-delay: 0.5s; } /* West */
+    .pin:nth-child(3) { top: 50%; left: 70%; animation-delay: 1s; } /* East */
+    .pin:nth-child(4) { top: 75%; left: 45%; animation-delay: 1.5s; } /* South */
+    .pin:nth-child(5) { top: 45%; left: 50%; animation-delay: 0.2s; } /* Central */
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+      70% { transform: scale(1.5); box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .trust-grid { grid-template-columns: 1fr; text-align: center; }
+      .stats-row { justify-content: center; }
+      .map-visual { min-height: 250px; margin-top: 30px; }
+    }
+
+
+
+    /* --- VARIABLES & RESET --- */
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #0f172a;
+      --accent: #16a34a;
+      --bg-body: #f8fafc;
+      --surface: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--secondary); letter-spacing: -0.025em; }
+    p { margin: 0 0 1.5rem; color: var(--text-muted); }
+    a { text-decoration: none; transition: all 0.2s ease; }
+    img { max-width: 100%; height: auto; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* --- BUTTONS --- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border-color: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+    .btn-outline.dark { border-color: var(--border); color: var(--text-main); }
+    .btn-outline.dark:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: #fff;
+    }
+    .btn-whatsapp:hover { background: #1ebc57; transform: translateY(-1px); }
+
+    /* --- HEADER --- */
+    header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #fff;
+    }
+    .logo img { height: 32px; width: auto; }
+
+    
+    /* --- HERO --- */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      padding: 80px 0 100px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Subtle Grid Pattern */
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+        opacity: 0.1;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .hero-text h1 {
+      font-size: 3.5rem;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+    
+    .hero-text .highlight {
+        background: -webkit-linear-gradient(45deg, #60a5fa, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-text p {
+      font-size: 1.125rem;
+      color: #94a3b8;
+      margin-bottom: 2rem;
+      max-width: 500px;
+    }
+
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 2.5rem 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    .checklist i { color: var(--accent); }
+
+    .hero-image img {
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+      transition: transform 0.5s ease;
+    }
+    .hero-image:hover img { transform: perspective(1000px) rotateY(0) rotateX(0); }
+
+    /* --- SECTIONS --- */
+    section { padding: 100px 0; }
+    
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 60px;
+    }
+    .section-header h2 { font-size: 2.25rem; margin-bottom: 1rem; }
+    .section-header p { font-size: 1.125rem; color: var(--text-muted); }
+
+    /* --- FEATURES --- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 32px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: #bfdbfe;
+    }
+
+    .icon-box {
+      width: 56px;
+      height: 56px;
+      background: #eff6ff;
+      color: var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    /* --- PRICING --- */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      align-items: start;
+    }
+
+    .plan {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      position: relative;
+      transition: transform 0.3s;
+    }
+
+    .plan.popular {
+      border: 2px solid var(--primary);
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    .badge-pop {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .plan h3 { font-size: 1.25rem; margin-bottom: 8px; }
+    .price { font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin: 16px 0; }
+    .price span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
+    
+    .plan ul { list-style: none; padding: 0; margin: 24px 0 32px; }
+    .plan li { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.95rem; color: var(--text-main); }
+    .plan li i { color: var(--accent); }
+
+    /* --- CTA --- */
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+      color: #fff;
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .cta-section h2 { color: #fff; margin-bottom: 1.5rem; }
+    .cta-section p { color: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto 32px; font-size: 1.1rem; }
+
+    /* --- FOOTER --- */
+    footer {
+      background: var(--secondary);
+      color: var(--text-muted);
+      padding: 60px 0 30px;
+      font-size: 0.9rem;
+    }
+    .footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .footer-col h4 { color: #fff; margin-bottom: 20px; font-size: 1rem; }
+    .footer-col a { display: block; color: var(--text-muted); margin-bottom: 10px; }
+    .footer-col a:hover { color: #fff; }
+    .copyright { text-align: center; margin-top: 30px; }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+      /* Hero Adjustments */
+      .hero-content { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+      .hero-text h1 { font-size: 2.5rem; }
+      .hero-text p { margin-left: auto; margin-right: auto; }
+      .checklist { max-width: 350px; margin: 0 auto 30px; text-align: left; }
+      
+      /* Image & Cards */
+      .hero-image img { transform: none; }
+      .plan.popular { transform: none; }
+      
+      /* TRUST SECTION (From previous step) */
+      .trust-grid { grid-template-columns: 1fr; text-align: center; }
+      .stats-row { justify-content: center; }
+      .map-visual { min-height: 250px; margin-top: 30px; }
+
+      /* HEADER ADJUSTMENTS */
+      /* 1. Ensure the Client Login button is VISIBLE (Removed display:none) */
+      .header-actions .btn-outline { 
+        display: inline-flex; 
+      } 
+
+      /* 2. Adjust button sizes to fit side-by-side on small screens */
+      .header-actions .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      /* 3. Hide the text inside the WhatsApp button on very small screens if needed */
+      .btn-whatsapp i { margin-right: 0; }
+      
+      /* Optional: Hide logo text on very small screens to save space */
+      .logo span { display: none; }
+      .logo i { font-size: 1.5rem; }
+    }
+
+    /* --- NAVIGATION MENU --- */
+    .main-nav {
+      display: flex;
+      gap: 32px;
+    }
+    
+    .main-nav a {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7); /* Subtle white */
+      transition: color 0.2s ease;
+    }
+    
+    .main-nav a:hover {
+      color: #ffffff; /* Bright white on hover */
+    }
+
+    /* Mobile: Hide nav links on small screens */
+    @media (max-width: 992px) {
+      .main-nav { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div class="logo">
+        <i class="fa-solid fa-layer-group text-primary"></i>
+        <span>ApnaLabour</span>
+      </div>
+      <nav class="main-nav">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/auth/login" class="btn btn-outline">Client Login</a>
+        <a href="https://wa.me/918240153944?text=Hi%2C%20I%20want%20a%202-minute%20demo%20of%20Labour%20Management%20System." 
+           target="_blank" class="btn btn-whatsapp">
+           <i class="fa-brands fa-whatsapp"></i> Get Demo
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1>Eliminate labour <br><span class="highlight">disputes & errors.</span></h1>
+        <p>The #1 Labour Management System for Indian contractors. Track attendance, manage 'kharcha' (advances), and automate payroll in one click.</p>
+        
+        <ul class="checklist">
+          <li><i class="fa-solid fa-check-circle"></i> One Click Attendance</li>
+          <li><i class="fa-solid fa-check-circle"></i> Advance Payment Tracking</li>
+          <li><i class="fa-solid fa-check-circle"></i> Site-wise Profit Reports</li>
+          <li><i class="fa-solid fa-check-circle"></i> Hindi & English Support</li>
+        </ul>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; @media(min-width:769px){justify-content: flex-start;}">
+          <a href="https://wa.me/918240153944?text=Hi%2C%20I%20want%20a%202-minute%20demo%20of%20Labour%20Management%20System." 
+             target="_blank" class="btn btn-primary">
+             Book 2-Min Demo
+          </a>
+          <a href="#features" class="btn btn-outline">View Features</a>
+        </div>
+      </div>
+
+      <div class="hero-image">
+        <img src="/static/landing_images/hero.png" alt="LMS Dashboard Interface" onerror="this.style.display='none'">
+        <div style="aspect-ratio:16/10; background:#1e293b; border-radius:12px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1);">
+            <div style="text-align:center; color:#475569;">
+                <i class="fa-solid fa-image fa-3x mb-3"></i><br>Dashboard Preview
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust-section">
+    <div class="container">
+      <div class="trust-grid">
+        
+        <div class="trust-content">
+          <h2>Trusted by 20+ Construction Firms Across India</h2>
+          <p>From high-rise towers in Mumbai to infrastructure projects in Uttar Pradesh, leading contractors rely on LabourFlow to manage their daily workforce operations.</p>
+          
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="stat-number">20+</span>
+              <span class="stat-label">Clients</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">12+</span>
+              <span class="stat-label">States</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">2000+</span>
+              <span class="stat-label">Daily Workers</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-visual">
+          <div class="map-dots">
+            <i class="fa-solid fa-map"></i>
+            
+            <div class="pin"></div>
+            <div class="pin"></div>
+            <div class="pin"></div>
+            <div class="pin"></div>
+            <div class="pin"></div>
+          </div>
+          
+          <div style="position: absolute; bottom: 20px; background: white; padding: 10px 20px; border-radius: 50px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-check text-success"></i> Pan-India Support
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Why top contractors switch to us</h2>
+        <p>Stop using notebooks and WhatsApp groups. Get professional control over your sites.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon-box"><i class="fa-solid fa-handshake"></i></div>
+          <h3>Zero Disputes</h3>
+          <p>Digital records of every shift and every rupee given as advance. Both contractor and labour can verify data instantly, building trust.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon-box"><i class="fa-solid fa-calculator"></i></div>
+          <h3>Automated Payroll</h3>
+          <p>System automatically calculates weekly/monthly wages based on daily rates, overtime, and advance deductions. No calculator needed.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="icon-box"><i class="fa-solid fa-chart-pie"></i></div>
+          <h3>Site Profitability</h3>
+          <p>Know exactly how much you are spending on labour per site in real-time. Catch budget overruns before they eat into your margin.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background-color: #f1f5f9;">
+    <div class="container">
+      <div class="section-header">
+        <h2>Simple, transparent pricing</h2>
+        <p>Choose the plan that fits the scale of your operations.</p>
+      </div>
+      
+      <div class="pricing-grid">
+        
+        <div class="plan">
+          <h3>Starter</h3>
+          <div class="price">₹999<span>/mo</span></div>
+          <p>Perfect for single-site contractors starting out.</p>
+          <hr style="border:0; border-top:1px solid var(--border); margin:24px 0;">
+          <ul>
+            <li><i class="fa-solid fa-check"></i> Up to 50 Labours</li>
+            <li><i class="fa-solid fa-check"></i> 1 Active Site</li>
+            <li><i class="fa-solid fa-check"></i> Basic PDF Reports</li>
+            <li><i class="fa-solid fa-check"></i> Email Support</li>
+          </ul>
+          <a href="https://wa.me/918240153944" class="btn btn-outline dark" style="width:100%">Select Starter</a>
+        </div>
+
+        <div class="plan popular">
+          <div class="badge-pop">Most Popular</div>
+          <h3>Standard</h3>
+          <div class="price">₹1,999<span>/mo</span></div>
+          <p>For growing construction firms managing multiple teams.</p>
+          <hr style="border:0; border-top:1px solid var(--border); margin:24px 0;">
+          <ul>
+            <li><i class="fa-solid fa-check"></i> <strong>Up to 100 Labours</strong></li>
+            <li><i class="fa-solid fa-check"></i> <strong>Up to 3 Active Sites</strong></li>
+            <li><i class="fa-solid fa-check"></i> Excel & PDF Exports</li>
+            <li><i class="fa-solid fa-check"></i> Advance Management</li>
+            <li><i class="fa-solid fa-check"></i> Priority WhatsApp Support</li>
+          </ul>
+          <a href="https://wa.me/918240153944" class="btn btn-primary" style="width:100%">Select Standard</a>
+        </div>
+
+        <div class="plan">
+          <h3>Enterprise</h3>
+          <div class="price">₹2,999<span>/mo</span></div>
+          <p>For large-scale operations requiring full control.</p>
+          <hr style="border:0; border-top:1px solid var(--border); margin:24px 0;">
+          <ul>
+            <li><i class="fa-solid fa-check"></i> Unlimited Labours</li>
+            <li><i class="fa-solid fa-check"></i> Unlimited Sites</li>
+            <li><i class="fa-solid fa-check"></i> Full Audit Logs</li>
+            <li><i class="fa-solid fa-check"></i> Multi-Admin Access</li>
+            <li><i class="fa-solid fa-check"></i> Dedicated Account Manager</li>
+          </ul>
+          <a href="https://wa.me/918240153944" class="btn btn-outline dark" style="width:100%">Contact Sales</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>2 minute ka demo dekhiye, phir decide kijiye</h2>
+      <p>See how easy it is to manage 100+ labours directly from your phone. No credit card required for the demo.</p>
+      <a href="https://wa.me/918240153944?text=Hi%2C%20I%20want%20a%202-minute%20demo%20of%20Labour%20Management%20System." 
+         target="_blank" class="btn btn-whatsapp" style="font-size: 1.1rem; padding: 16px 32px;">
+         <i class="fa-brands fa-whatsapp"></i> Request Demo on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-col" style="flex: 2; min-width: 280px;">
+          <h4>ApnaLabour LMS</h4>
+          <p style="max-width: 300px;">Simplifying construction management for Indian contractors since 2024. Built for speed, trust, and accuracy.</p>
+        </div>
+        
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#">Pricing</a>
+          <a href="/auth/login">Login</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="tel:+918240153944">+91 82401 53944</a>
+          <a href="mailto:syedsadab29@gmail.com">syedsadab29@gmail.com</a>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        &copy; 2026 Labour Management System. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

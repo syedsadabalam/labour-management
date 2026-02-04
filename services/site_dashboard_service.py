@@ -1,8 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from sqlalchemy import func, case, or_
-
-from models import db, Site, User, Labour, Attendance, Payment
+from extensions import db
+from models import Site, User, Labour, Attendance, Payment
 
 
 def D(val):
@@ -50,6 +50,7 @@ def get_admin_site_dashboard(site_id: int) -> dict:
             Attendance.site_id == site_id,
             Attendance.date == today,
             or_(
+                Attendance.morning_shift_flag.is_(True),
                 Attendance.day_shift_flag.is_(True),
                 Attendance.night_shift_flag.is_(True)
             )
@@ -62,6 +63,10 @@ def get_admin_site_dashboard(site_id: int) -> dict:
     # -----------------------------
     total_shifts_today = (
         db.session.query(
+            func.coalesce(
+                func.sum(case((Attendance.morning_shift_flag.is_(True), 1), else_=0)),
+                0
+            ) +
             func.coalesce(
                 func.sum(case((Attendance.day_shift_flag.is_(True), 1), else_=0)),
                 0

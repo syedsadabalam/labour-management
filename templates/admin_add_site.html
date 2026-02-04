@@ -1,68 +1,207 @@
 {% extends "base.html" %}
-
-{% block title %}Add New Site{% endblock %}
-{% block page_title %}Add New Work Site{% endblock %}
+{% block title %}Add New Site | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="fw-semibold text-dark mb-0">
-      <i class="fa-solid fa-building me-2 text-primary"></i>Add New Work Site
-    </h5>
-    <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="btn btn-outline-secondary">
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-      <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FORM CARD --- */
+    .add-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 600px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-building"></i> Sites
     </a>
-  </div>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
 
-  <!-- ADD SITE FORM -->
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-bottom fw-semibold">
-      Site Registration Form
-    </div>
+<div class="container-fluid py-5 px-4">
 
-    <div class="card-body p-4">
-      <form method="POST" action="{{ url_for('admin_bp.admin_add_site') }}">
+    <div class="add-card">
         
-        <!-- SITE NAME -->
-        <div class="mb-3">
-          <label for="site_name" class="form-label fw-semibold">Site Name <span class="text-danger">*</span></label>
-          <input
-            type="text"
-            class="form-control"
-            id="site_name"
-            name="site_name"
-            placeholder="Enter work site name"
-            required
-          />
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Register New Work Site</h5>
+            <p class="text-secondary small mb-0">Create a new project location to track attendance and payroll.</p>
         </div>
 
-        <!-- LOCATION -->
-        <div class="mb-3">
-          <label for="location" class="form-label fw-semibold">Location</label>
-          <input
-            type="text"
-            class="form-control"
-            id="location"
-            name="location"
-            placeholder="Enter site location (e.g., Sindri, Dhanbad)"
-          />
-        </div>
+        <div class="card-body-custom">
+            <form method="POST" action="{{ url_for('admin_bp.admin_add_site') }}">
+                
+                <div class="mb-4">
+                    <label class="form-label">Project Site Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-building"></i>
+                        </span>
+                        <input type="text" name="site_name" class="form-control border-start-0 ps-0" 
+                               id="site_name" placeholder="e.g. Sindri Extension Phase 2" required>
+                    </div>
+                </div>
 
-        <div class="text-end">
-          <button type="submit" class="btn btn-success px-4">
-            <i class="fa-solid fa-plus"></i> Add Site
-          </button>
-          <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="btn btn-outline-secondary">
+                <div class="mb-4">
+                    <label class="form-label">Location / City</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </span>
+                        <input type="text" name="location" class="form-control border-start-0 ps-0" 
+                               id="location" placeholder="e.g. Dhanbad, Jharkhand">
+                    </div>
+                </div>
 
-            Cancel
-          </a>
+                <div class="mb-5">
+                    <label class="form-label">Assign Initial Manager</label>
+                    <select name="manager_id" class="form-select">
+                        <option value="">-- No Manager (Assign Later) --</option>
+                        {% for manager in managers %}
+                            <option value="{{ manager.id }}">
+                                {{ manager.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text small text-muted mt-2">
+                        <i class="fa-solid fa-circle-check me-1 text-success"></i> You can change the manager at any time later.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-plus"></i> Create Site
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
         </div>
-      </form>
     </div>
-  </div>
 
 </div>
 {% endblock %}

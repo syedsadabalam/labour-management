@@ -1,244 +1,372 @@
 {% extends "base.html" %}
 {% block content %}
 
- <!-- ADMIN ACTION BAR -->
-        <div class="card shadow-sm mb-4">
-        <div class="card-body py-2">
-            <div class="d-flex flex-wrap gap-2">
+<style>
+    /* --- SENIOR DEVELOPER THEME --- */
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-            <a href="{{ url_for('admin_bp.admin_sites') }}"
-                class="btn btn-sm btn-outline-primary">
-                🏗 Sites
-            </a>
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
-            <a href="{{ url_for('admin_bp.admin_managers') }}"
-                class="btn btn-sm btn-outline-success">
-                👤 Managers
-            </a>
+    /* --- TOP NAVIGATION BAR --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover {
+        background-color: #f8fafc;
+        color: var(--primary);
+        border-color: var(--border);
+    }
+    .nav-pill-custom.active {
+        background-color: #eff6ff;
+        color: var(--primary);
+        border-color: #bfdbfe;
+    }
 
-            <a href="{{ url_for('admin_bp.monthly_report') }}"
-                class="btn btn-sm btn-outline-info">
-                📊 Monthly Reports
-            </a>
+    /* --- STATS WIDGETS --- */
+    .stat-widget {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .stat-delta {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .text-trend-up { color: var(--success); }
+    .text-trend-down { color: var(--danger); }
 
-            <a href="{{ url_for('admin_bp.attendance_report') }}"
-                class="btn btn-sm btn-outline-secondary">
-                🕒 Attendance Report
-            </a>
+    /* --- SITE CARDS --- */
+    .site-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .site-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: #cbd5e1;
+    }
+    .site-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: #fcfcfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .site-body {
+        padding: 1.25rem;
+        flex-grow: 1;
+    }
+    .site-footer {
+        padding: 0.75rem 1.25rem;
+        background: #f8fafc;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+    }
 
-            <a href="{{ url_for('admin_bp.labour_salary_sheet') }}"
-                class="btn btn-sm btn-outline-success">
-                💰 Salary Sheet
-            </a>
+    /* Progress Bar Custom */
+    .progress-thin {
+        height: 6px;
+        border-radius: 3px;
+        background-color: #e2e8f0;
+        margin-top: 8px;
+    }
 
-            <a href="{{ url_for('admin_bp.admin_audit_logs') }}"
-                class="btn btn-sm btn-outline-dark">
-                🧾 Activity Logs
-            </a>
+    /* Alerts Panel */
+    .alert-panel {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .alert-item {
+        display: flex;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: #991b1b;
+        margin-bottom: 0.5rem;
+        align-items: flex-start;
+    }
+    .alert-item:last-child { margin-bottom: 0; }
 
-            </div>
-        </div>
-        </div>
+    /* Right Sidebar Lists */
+    .list-group-custom .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--border);
+        padding: 10px 0;
+        font-size: 0.9rem;
+    }
+    .list-group-custom .list-group-item:last-child { border-bottom: none; }
 
-<div class="container-fluid mt-3">
+</style>
 
-
-  <!-- ================= TOP SYSTEM STATUS BAR ================= -->
-  <div class="card mb-3 p-2 px-3 d-flex flex-row justify-content-between align-items-center">
-    <div class="fw-semibold">
-      🔥 Attendance {{ dashboard.system_status.attendance_percent }}%
-      &nbsp; | &nbsp;
-      Sites Active {{ dashboard.system_status.active_sites }}/{{ dashboard.system_status.total_sites }}
-      &nbsp; | &nbsp;
-      Payroll {{ dashboard.system_status.payroll_state }}
-    </div>
-
-    {% if dashboard.system_status.alerts > 0 %}
-      <span class="badge bg-danger">{{ dashboard.system_status.alerts }} Alerts</span>
-    {% else %}
-      <span class="badge bg-success">No Alerts</span>
-    {% endif %}
-  </div>
-
-  <!-- ================= KPI ROW ================= -->
-  <div class="row g-3 mb-4">
-
-
-    <div class="col-md-3">
-      <div class="card p-3 text-center">
-        <div class="text-muted small">Attendance Today</div>
-        <h4 class="mb-0">{{ dashboard.system_status.attendance_percent }}%</h4>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card p-3 text-center">
-        <div class="text-muted small">Active Sites</div>
-        <h4 class="mb-0">
-          {{ dashboard.system_status.active_sites }} / {{ dashboard.system_status.total_sites }}
-        </h4>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card p-3 text-center">
-        <div class="text-muted small">Payroll Exposure (MTD)</div>
-        <h4 class="mb-0">₹{{ dashboard.financial_risk.payroll_mtd }}</h4>
-        <small class="text-muted">Advances {{ dashboard.financial_risk.ratio }}%</small>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card p-3 text-center">
-        <div class="text-muted small">Critical Alerts</div>
-        <h4 class="mb-0 text-danger">{{ dashboard.system_status.alerts }}</h4>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ================= MAIN GRID ================= -->
-  <div class="row g-4">
-
-    <!-- ================= LEFT COLUMN ================= -->
-    <div class="col-lg-9">
-
-      <!-- ACTION REQUIRED -->
-      {% if dashboard.system_status.alerts > 0 %}
-      <div class="card border-danger mb-4">
-        <div class="card-body">
-          <h6 class="text-danger mb-3">🚨 ACTION REQUIRED TODAY</h6>
-          <ul class="mb-0">
-            {% for site in dashboard.sites %}
-              {% for alert in site.alerts %}
-                <li><strong>{{ site.site_name }}</strong> — {{ alert }}</li>
-              {% endfor %}
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- SITE OVERVIEW -->
-      <h5 class="mb-3">Site Overview</h5>
-      <div class="row g-3">
-
-        {% for site in dashboard.sites %}
-        <div class="col-md-4">
-          <div class="card h-100">
-
-            <div class="card-body">
-
-              <!-- Header -->
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong>{{ site.site_name }}</strong>
-
-                {% if site.total_labours == 0 %}
-                  <span class="badge bg-secondary">INACTIVE</span>
-                {% elif site.status == 'CRITICAL' %}
-                  <span class="badge bg-danger">❌Attendance</span>
-                {% elif site.status == 'DELAYED' %}
-                  <span class="badge bg-warning text-dark"> ⚠️Attendance Late</span>
-                {% else %}
-                  <span class="badge bg-success">✅Attendance</span>
-                {% endif %}
-              </div>
-
-              <div class="text-muted small mb-2">
-                Manager: {{ site.manager_name }}
-              </div>
-
-              <!-- Attendance -->
-              <div class="fw-semibold mb-1">
-                Attendance:
-                {{ site.present_today }} / {{ site.total_labours }}
-                ({{ site.attendance_percent }}%)
-              </div>
-
-              <!-- Payroll -->
-              <div class="small text-muted mb-2">
-                Payroll (MTD): ₹{{ site.payroll_mtd }} <br>
-                Advances: ₹{{ site.total_advance }} ({{ site.advance_ratio }}%)
-              </div>
-
-              <!-- Alerts -->
-              {% if site.alerts %}
-              <ul class="small text-danger ps-3 mb-2">
-                {% for a in site.alerts %}
-                  <li>{{ a }}</li>
-                {% endfor %}
-              </ul>
-              {% endif %}
-
-              <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.site_id) }}" class="btn btn-sm btn-light w-100">View Site</a>
-              <a href="{{ url_for('admin_bp.admin_monthly_attendance', site_id=site.site_id ) }}" class="btn btn-sm btn-light w-100">Monthly Attendance</a>
-
-
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-
-      </div>
-
-    </div>
-
-    <!-- ================= RIGHT COLUMN ================= -->
-    <div class="col-lg-3">
-
-      <!-- FINANCIAL RISK -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <h6>Financial Risk</h6>
-          <ul class="small mb-0">
-            <li>Advance / Payroll: {{ dashboard.financial_risk.ratio }}%</li>
-            <li><strong>Total Payroll (MTD): ₹{{ dashboard.financial_risk.payroll_mtd }}</strong></li>
-            <li><strong>Total Advances: ₹{{ dashboard.financial_risk.advances }}</strong></li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- ATTENDANCE EXCEPTIONS -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <h6>Attendance Exceptions</h6>
-          <ul class="small mb-0">
-            {% if dashboard.attendance_exceptions %}
-              {% for e in dashboard.attendance_exceptions %}
-                <li>{{ e.site_name }} – {{ e.attendance_percent }}%</li>
-              {% endfor %}
-            {% else %}
-              <li>No attendance exceptions</li>
-            {% endif %}
-          </ul>
-        </div>
-      </div>
-
-      <!-- MANAGERS -->
-      <div class="card">
-        <div class="card-body">
-          <h6>Managers</h6>
-          <ul class="small mb-0">
-            {% for m in dashboard.managers %}
-              <li>
-                {{ m.manager }} ({{ m.site }}) –
-                {% if m.status == 'Healthy' %}
-                  🟢 Attendance Marked
-                {% elif m.status == 'Delayed' %}
-                  🟡 Attendance Late
-                {% else %}
-                  🔴 Attendance NOT Marked
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
 </div>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Dashboard Overview</h4>
+            <p class="text-secondary small mb-0">Real-time snapshot of site operations and financials.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-secondary border px-3 py-2 fw-normal">
+                <i class="fa-solid fa-calendar me-2"></i> {{ dashboard.current_date }}
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Daily Attendance</div>
+                    <div class="stat-value">{{ dashboard.system_status.attendance_percent }}%</div>
+                </div>
+                <div class="progress progress-thin">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ dashboard.system_status.attendance_percent }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Active Sites</div>
+                    <div class="stat-value">
+                        {{ dashboard.system_status.active_sites }} <span class="text-secondary fs-6 fw-normal">/ {{ dashboard.system_status.total_sites }}</span>
+                    </div>
+                </div>
+                <div class="stat-delta text-success">
+                    <i class="fa-solid fa-circle-check"></i> Operations Normal
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Payroll Exposure (MTD)</div>
+                    <div class="stat-value">₹{{ dashboard.financial_risk.payroll_mtd }}</div>
+                </div>
+                <div class="stat-delta text-secondary">
+                    <span>Advances: <strong>{{ dashboard.financial_risk.ratio }}%</strong> of payroll</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-widget" style="border-left: 4px solid var(--danger);">
+                <div>
+                    <div class="stat-label text-danger">Critical Alerts</div>
+                    <div class="stat-value text-danger">{{ dashboard.system_status.alerts }}</div>
+                </div>
+                <div class="stat-delta text-danger">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Action Required
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-9">
+            
+            {% if dashboard.system_status.alerts > 0 %}
+            <div class="alert-panel mb-4">
+                <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-bell me-2"></i>Immediate Attention Needed</h6>
+                {% for site in dashboard.sites %}
+                    {% for alert in site.alerts %}
+                        <div class="alert-item">
+                            <i class="fa-solid fa-circle-exclamation mt-1"></i>
+                            <div><strong>{{ site.site_name }}:</strong> {{ alert }}</div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <h5 class="fw-bold text-dark mb-3">Site Performance</h5>
+            <div class="row g-3">
+                {% for site in dashboard.sites %}
+                <div class="col-md-4">
+                    <div class="site-card">
+                        <div class="site-header">
+                            <h6 class="fw-bold mb-0 text-truncate" title="{{ site.site_name }}">{{ site.site_name }}</h6>
+                            {% if site.status == 'CRITICAL' %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Critcial</span>
+                            {% elif site.status == 'DELAYED' %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Late</span>
+                            {% elif site.total_labours == 0 %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">Inactive</span>
+                            {% else %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span>
+                            {% endif %}
+                        </div>
+                        <div class="site-body">
+                            <div class="d-flex justify-content-between text-secondary small mb-1">
+                                <span>Attendance</span>
+                                <span class="fw-bold text-dark">{{ site.attendance_percent }}%</span>
+                            </div>
+                            <div class="progress progress-thin mb-3">
+                                <div class="progress-bar {% if site.attendance_percent < 50 %}bg-danger{% else %}bg-success{% endif %}" 
+                                     role="progressbar" style="width: {{ site.attendance_percent }}%"></div>
+                            </div>
+                            
+                            <div class="row g-2 small">
+                                <div class="col-6">
+                                    <div class="text-secondary" style="font-size: 0.75rem;">PAYROLL</div>
+                                    <div class="fw-semibold">₹{{ site.payroll_mtd }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-secondary" style="font-size: 0.75rem;">ADVANCES</div>
+                                    <div class="fw-semibold">₹{{ site.advances_mtd }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="site-footer">
+                            <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.site_id) }}" class="btn btn-sm btn-outline-secondary w-100" style="font-size: 0.8rem;">Dashboard</a>
+                            <a href="{{ url_for('admin_bp.admin_monthly_attendance', site_id=site.site_id ) }}" class="btn btn-sm btn-outline-primary w-100" style="font-size: 0.8rem;">Attendance</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            
+            <div class="card border mb-4 shadow-sm" style="border-radius: 12px;">
+                <div class="card-header bg-white fw-bold border-bottom py-3">
+                    <i class="fa-solid fa-chart-line me-2 text-primary"></i>Financial Snapshot
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary small">Total Payroll</span>
+                        <span class="fw-bold">₹{{ dashboard.financial_risk.payroll_mtd }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary small">Total Advances</span>
+                        <span class="fw-bold text-danger">₹{{ dashboard.financial_risk.advances }}</span>
+                    </div>
+                    <hr class="my-2 text-secondary opacity-25">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary small">Risk Ratio</span>
+                        <span class="badge bg-warning text-dark">{{ dashboard.financial_risk.ratio }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border shadow-sm" style="border-radius: 12px;">
+                <div class="card-header bg-white fw-bold border-bottom py-3">
+                    <i class="fa-solid fa-user-tie me-2 text-primary"></i>Manager Status
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-custom px-3">
+                        {% for m in dashboard.managers %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold" style="font-size: 0.85rem;">{{ m.manager }}</div>
+                                <div class="text-secondary" style="font-size: 0.75rem;">{{ m.site }}</div>
+                            </div>
+                            {% if m.status == 'Healthy' %}
+                                <i class="fa-solid fa-circle-check text-success" title="Marked"></i>
+                            {% elif m.status == 'Delayed' %}
+                                <i class="fa-solid fa-clock text-warning" title="Delayed"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-xmark text-danger" title="Missing"></i>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}

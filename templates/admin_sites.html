@@ -1,114 +1,292 @@
 {% extends "base.html" %}
-{% block title %}Sites{% endblock %}
+{% block title %}Sites Management{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h4 class="mb-0">Sites</h4>
-      <p class="text-muted small">All project sites</p>
-    </div>
-  </div>
-  <div class="text-end">
-    <a href="{{ url_for('admin_bp.admin_add_site') }}" class="btn btn-primary btn-sm">+ Add Site</a>
-    <a href="{{ url_for('admin_bp.admin_dashboard') }}"
-       class="btn btn-sm btn-outline-secondary">
-      Back to Dashboard
+<style>
+    /* --- THEME VARIABLES --- */
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --danger: #ef4444;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover {
+        background-color: #f8fafc;
+        color: var(--primary);
+    }
+    .nav-pill-custom.active {
+        background-color: #eff6ff;
+        color: var(--primary);
+        border-color: #bfdbfe;
+    }
+
+    /* --- PAGE HEADER --- */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- MODERN TABLE --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .table-modern tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* --- BADGES & BUTTONS --- */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-active { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-inactive { background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+    .btn-action {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    /* Edit Button Style */
+    .btn-action-edit { color: var(--primary); background: #eff6ff; }
+    .btn-action-edit:hover { background: #dbeafe; }
+    
+    /* Deactivate (Warning) Style */
+    .btn-action-warn { color: #b45309; background: #fffbeb; }
+    .btn-action-warn:hover { background: #fef3c7; }
+
+    /* Activate (Success) Style */
+    .btn-action-success { color: #15803d; background: #f0fdf4; }
+    .btn-action-success:hover { background: #dcfce7; }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        transition: background 0.2s;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-building"></i> Sites
     </a>
-  </div>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
 
-  <div class="card">
-    <div class="card-body p-0">
+<div class="container-fluid py-4 px-4">
 
-      {% if sites %}
-      <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th style="width:50px">#</th>
-              <th>Site Name</th>
-              <th>Location</th>
-              <th>Manager</th>
-              <th>Status</th>
-              <th style="width:180px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            {% for site in sites %}
-            <tr>
-              <td>{{ loop.index }}</td>
-
-              <td>{{ site.site_name or '-' }}</td>
-
-              <td>{{ site.location or '-' }}</td>
-
-              <!-- ✅ FIXED MANAGER DISPLAY -->
-              <td>
-                {% set managers = site.users | selectattr('role', 'equalto', 'manager') | list %}
-                
-                {% if managers %}
-                  {% for manager in managers %}
-                    <span>
-                      {{ manager.username }}
-                    </span>
-                  {% endfor %}
-                {% else %}
-                  <span class="text-muted">Not Assigned</span>
-                {% endif %}
-              </td>
-
-
-              <!-- STATUS -->
-              <td>
-                {% if site.is_active %}
-                  <span class="badge bg-success">Active</span>
-                {% else %}
-                  <span class="badge bg-secondary">Inactive</span>
-                {% endif %}
-              </td>
-
-              <!-- ACTIONS -->
-              <td>
-                <a href="{{ url_for('admin_bp.admin_edit_site', site_id=site.id) }}"
-                   class="btn btn-sm btn-outline-primary">
-                  Edit
-                </a>
-
-                <!-- ACTIVATE / DEACTIVATE -->
-                <form action="{{ url_for('admin_bp.toggle_site_status', site_id=site.id) }}"
-                      method="post"
-                      style="display:inline;">
-                  {% if site.is_active %}
-                    <button class="btn btn-sm btn-outline-warning"
-                            onclick="return confirm('Deactivate this site?')">
-                      Deactivate
-                    </button>
-                  {% else %}
-                    <button class="btn btn-sm btn-outline-success"
-                            onclick="return confirm('Activate this site?')">
-                      Activate
-                    </button>
-                  {% endif %}
-                </form>
-              </td>
-
-            </tr>
-            {% endfor %}
-
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-        <div class="p-4 text-center text-muted">
-          No sites found.
+    <div class="page-header">
+        <div>
+            <h4 class="fw-bold mb-1">Project Sites</h4>
+            <p class="text-secondary small mb-0">Manage all construction sites and their assigned managers.</p>
         </div>
-      {% endif %}
-
+        <div>
+            <a href="{{ url_for('admin_bp.admin_add_site') }}" class="btn-primary-custom">
+                <i class="fa-solid fa-plus"></i> Add New Site
+            </a>
+        </div>
     </div>
-  </div>
+
+    <div class="table-card">
+        {% if sites %}
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="25%">Site Name</th>
+                        <th width="20%">Location</th>
+                        <th width="20%">Manager</th>
+                        <th width="10%">Status</th>
+                        <th width="20%" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for site in sites %}
+                    <tr>
+                        <td class="text-secondary">{{ loop.index }}</td>
+                        
+                        <td>
+                            <div class="fw-bold text-dark">{{ site.site_name or '-' }}</div>
+                        </td>
+
+                        <td class="text-secondary">
+                            <i class="fa-solid fa-location-dot me-1 text-muted small"></i> {{ site.location or '-' }}
+                        </td>
+
+                        <td>
+                            {% set managers = site.users | selectattr('role', 'equalto', 'manager') | list %}
+                            
+                            {% if managers %}
+                                <div class="d-flex flex-column gap-1">
+                                {% for manager in managers %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold border" 
+                                             style="width:24px; height:24px; font-size:10px;">
+                                            {{ manager.username[:1] | upper }}
+                                        </div>
+                                        <span class="small fw-medium">{{ manager.username }}</span>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-secondary fst-italic small">Not Assigned</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if site.is_active %}
+                                <span class="status-badge status-active">Active</span>
+                            {% else %}
+                                <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-end">
+                            <a href="{{ url_for('admin_bp.admin_edit_site', site_id=site.id) }}" 
+                               class="btn-action btn-action-edit me-1" title="Edit details">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </a>
+
+                            <form action="{{ url_for('admin_bp.toggle_site', site_id=site.id) }}" 
+                                  method="post" style="display:inline;">
+                                {% if site.is_active %}
+                                    <button class="btn-action btn-action-warn" 
+                                            onclick="return confirm('Are you sure you want to deactivate this site? Manager access will be paused.')"
+                                            title="Deactivate Site">
+                                        <i class="fa-solid fa-ban"></i> Deactivate
+                                    </button>
+                                {% else %}
+                                    <button class="btn-action btn-action-success" 
+                                            onclick="return confirm('Activate this site?')"
+                                            title="Activate Site">
+                                        <i class="fa-solid fa-check"></i> Activate
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-building fs-1"></i>
+            </div>
+            <h6 class="text-dark fw-bold">No sites found</h6>
+            <p class="text-secondary small">Get started by adding your first project site.</p>
+            <a href="{{ url_for('admin_bp.admin_add_site') }}" class="btn btn-sm btn-outline-primary">
+                Add New Site
+            </a>
+        </div>
+        {% endif %}
+    </div>
 
 </div>
 {% endblock %}

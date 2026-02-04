@@ -1,187 +1,334 @@
 {% extends "base.html" %}
-{% block title %}Add Labour{% endblock %}
+{% block title %}Add New Labour | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- Header -->
-  <div class="row mb-3">
-    <div class="col-8">
-      <h4 class="mb-0">Add Labour</h4>
-      <p class="text-muted small">Create a new labour record</p>
-    </div>
-    <div class="col-4 text-end">
-      <a href="{{ url_for('admin_bp.admin_labours') }}"
-         class="btn btn-sm btn-outline-secondary">
-        Back to Labours
-      </a>
-    </div>
-  </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-  <!-- Form -->
-  <div class="card">
-    <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Gate Pass ID</label>
-          <input type="text"
-                name="gate_pass_id"
-                class="form-control"
-                placeholder="Enter gate pass ID">
-        </div>
+    /* --- FORM CARD --- */
+    .add-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 800px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
 
-        <div class="row">
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+    
+    .form-control[type="file"] {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        background: #f8fafc;
+    }
 
-          
-          <!-- Name -->
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
 
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Labour Name</label>
-            <input type="text"
-                   name="name"
-                   class="form-control"
-                   required>
-          </div>
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
 
-          <!-- Phone -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Phone No</label>
-            <input
-              type="text"
-              name="phone"
-              class="form-control"
-              required
-              pattern="[0-9]{10}"
-              maxlength="10"
-              inputmode="numeric"
-              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-              placeholder="10 digit mobile number"
-            >
-          </div>
-        </div>
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
 
-        <div class="row">
-          <!-- Bank Account -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Bank Account No</label>
-            <input
-              type="text"
-              name="bank_account"
-              class="form-control"
-              inputmode="numeric"
-              pattern="[0-9]{9,18}"
-              minlength="9"
-              maxlength="18"
-              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-              placeholder="Enter bank account number (9–18 digits)">
-          </div>
+</style>
 
-          <!-- IFSC -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">IFSC Code</label>
-            <input type="text"
-                   name="ifsc_code"
-                   class="form-control"
-                   placeholder="ABCD1234567">
-          </div>
-        </div>
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_labours') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-helmet-safety"></i> Labour List
+    </a>
+</div>
 
-        <div class="row">
-          <!-- Site -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Site</label>
-            <select name="site_id" class="form-select">
-              <option value="">-- Select Site --</option>
-              {% for site in sites %}
-                <option value="{{ site.id }}">
-                  {{ site.site_name or site.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+<div class="container-fluid py-5 px-4">
 
-          <!-- Daily Wage -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Daily Wage</label>
-            <input type="number"
-                   name="daily_wage"
-                   class="form-control"
-                   step="0.01"
-                   value="533.00">
-          </div>
-        </div>
-
-        <div class="row mt-3">
-          <div class="col-md-4">
-            <label>Labour Photo</label>
-            <input type="file" name="photo" class="form-control image-input"
-              accept="image/*"
-              capture="environment">
-          </div>
-
-          <div class="col-md-4">
-            <label>Aadhaar Front</label>
-            <input type="file" name="aadhaar_front" class="form-control image-input"
-              accept="image/*"
-              capture="environment">
-          </div>
-
-          <div class="col-md-4">
-            <label>Aadhaar Back</label>
-            <input type="file" name="aadhaar_back" class="form-control image-input"
-              accept="image/*"
-              capture="environment">
-          </div>
-        </div>
-
-        <div class="row mt-3">
-
-          <div class="col-md-4">
-            <label>Gate Pass Front</label>
-            <input type="file" name="gate_pass_front" class="form-control image-input"
-              accept="image/*"
-              capture="environment">
-          </div>
-
-          <div class="col-md-4">
-            <label>Gate Pass Back</label>
-            <input type="file" name="gate_pass_back" class="form-control image-input"
-              accept="image/*"
-              capture="environment">
-          </div>
-        </div>
-
+    <div class="add-card">
         
-
-
-        <!-- Active -->
-        <div class="mb-3 form-check">
-          <input type="checkbox"
-                 name="is_active"
-                 class="form-check-input"
-                 id="activeCheck"
-                 checked>
-          <label class="form-check-label" for="activeCheck">
-            Active
-          </label>
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Register New Labour</h5>
+            <p class="text-secondary small mb-0">Create a profile for a new worker with documents and site assignment.</p>
         </div>
 
-        <!-- Actions -->
-        <div class="mt-4">
-          <button type="submit" class="btn btn-primary">
-            Add Labour
-          </button>
-          <a href="{{ url_for('admin_bp.admin_labours') }}"
-             class="btn btn-outline-secondary ms-2">
-            Cancel
-          </a>
-        </div>
+        <div class="card-body-custom">
+            <form method="post" enctype="multipart/form-data">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input type="text" name="name" class="form-control border-start-0 ps-0" required placeholder="e.g. Rajesh Kumar">
+                        </div>
+                    </div>
 
-      </form>
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass ID</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-id-badge"></i>
+                            </span>
+                            <input type="text" name="gate_pass_id" class="form-control border-start-0 ps-0" placeholder="e.g. GP-2026-001">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-phone"></i>
+                            </span>
+                            <input type="text" name="phone" class="form-control border-start-0 ps-0" required 
+                                   pattern="[0-9]{10}" maxlength="10" inputmode="numeric" 
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="10-digit mobile">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Assigned Site <span class="text-danger">*</span></label>
+                        <select name="site_id" class="form-select" required>
+                            <option value="">-- Select Site --</option>
+                            {% for site in sites %}
+                                <option value="{{ site.id }}">{{ site.site_name or site.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">Financial Details</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Daily Wage (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">₹</span>
+                            <input type="number" name="daily_wage" class="form-control border-start-0 ps-0" value="533.00" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Bank Account No</label>
+                        <input type="text" name="bank_account" class="form-control" 
+                               inputmode="numeric" pattern="[0-9]{9,18}" minlength="9" maxlength="18" 
+                               oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="9-18 digits">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" name="ifsc_code" class="form-control text-uppercase" placeholder="e.g. SBIN0001234">
+                    </div>
+                </div>
+
+                <div class="section-title">Documents Upload</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Labour Photo</label>
+                        <input type="file" name="photo" class="form-control image-input" accept="image/*" capture="environment">
+                    </div>
+                    <div class="col-md-6"></div> <div class="col-md-6">
+                        <label class="form-label">Aadhaar Card (Front)</label>
+                        <input type="file" name="aadhaar_front" class="form-control image-input" accept="image/*" capture="environment">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Aadhaar Card (Back)</label>
+                        <input type="file" name="aadhaar_back" class="form-control image-input" accept="image/*" capture="environment">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass (Front)</label>
+                        <input type="file" name="gate_pass_front" class="form-control image-input" accept="image/*" capture="environment">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Gate Pass (Back)</label>
+                        <input type="file" name="gate_pass_back" class="form-control image-input" accept="image/*" capture="environment">
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-5">
+                    <input class="form-check-input" type="checkbox" id="activeCheck" name="is_active" checked>
+                    <label class="form-check-label fw-semibold text-secondary" for="activeCheck">Set Status as Active</label>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-user-plus"></i> Create Profile
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_labours') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
+        </div>
     </div>
-  </div>
 
 </div>
+<div class="modal fade" id="imageCropModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-crop-simple me-2"></i>Adjust Image
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0 bg-black d-flex align-items-center justify-content-center" style="height: 60vh;">
+                <img id="cropperImage" src="" style="max-width: 100%; max-height: 100%; display: block;">
+            </div>
+
+            <div class="modal-footer bg-light border-top-0 justify-content-between">
+                <div class="text-muted small">
+                    <i class="fa-solid fa-circle-info me-1"></i> Scroll to zoom, drag to move
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="cropConfirmBtn" class="btn btn-primary px-4 fw-semibold">
+                        <i class="fa-solid fa-check me-2"></i> Crop & Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+
+
+<!-- CropperJS CSS -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css"
+/>
+
+<!-- CropperJS JS -->
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+
+<!-- YOUR cropper logic (AFTER CropperJS) -->
+<script src="{{ url_for('static', filename='js/image-cropper.js') }}"></script>
+
 {% endblock %}

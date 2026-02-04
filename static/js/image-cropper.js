@@ -1,88 +1,112 @@
+/* ===============================
+   IMAGE CROPPER – FINAL VERSION
+   =============================== */
+
 let cropper = null;
 let activeInput = null;
+let cropModal = null;
 
+// Ensure modal exists
 document.addEventListener("DOMContentLoaded", () => {
+    const modalEl = document.getElementById("imageCropModal");
+    if (!modalEl) return;
 
-  document.querySelectorAll(".image-input").forEach(input => {
-    input.addEventListener("change", e => {
-      if (!e.target.files || !e.target.files.length) return;
+    cropModal = new bootstrap.Modal(modalEl);
 
-      activeInput = e.target;
-
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        openCropModal(reader.result);
-      };
-
-      reader.readAsDataURL(file);
+    modalEl.addEventListener("shown.bs.modal", () => {
+        const cropBtn = document.getElementById("cropConfirmBtn");
+        if (cropBtn) {
+            cropBtn.onclick = applyCrop; // overwrite safely
+        }
     });
-  });
 
-  document.getElementById("cropConfirmBtn")
-    .addEventListener("click", applyCrop);
+    modalEl.addEventListener("hidden.bs.modal", () => {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    });
 });
 
-function openCropModal(imageSrc) {
-  const img = document.getElementById("cropperImage");
-  const modalEl = document.getElementById("imageCropModal");
 
-  img.src = imageSrc;
+// Attach to all image file inputs
+document.addEventListener("change", function (e) {
+    const input = e.target;
 
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+    if (
+        input.tagName !== "INPUT" ||
+        input.type !== "file" ||
+        !input.classList.contains("image-input")
+    ) {
+        return;
+    }
 
-  // ⚠️ IMPORTANT: wait until modal is fully visible
-  modalEl.addEventListener(
-    "shown.bs.modal",
-    () => {
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
+    if (!input.files || !input.files[0]) return;
 
-      cropper = new Cropper(img, {
-        aspectRatio: 1,
-        viewMode: 1,
-        autoCropArea: 0.9,
-        responsive: true,
-        background: false,
-        zoomable: true,
-        scalable: true,
-        movable: true,
-      });
-    },
-    { once: true } // prevent duplicate init
-  );
+    activeInput = input;
+    const file = input.files[0];
+
+    const reader = new FileReader();
+    reader.onload = function () {
+        const img = document.getElementById("cropperImage");
+        img.src = reader.result;
+
+        cropModal.show();
+
+        if (cropper) cropper.destroy();
+
+        cropper = new Cropper(img, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 1,
+            responsive: true,
+            background: false,
+        });
+    };
+
+    reader.readAsDataURL(file);
+});
+
+// Crop & Save button
+const cropBtn = document.getElementById("cropConfirmBtn");
+if (cropBtn) {
+    cropBtn.addEventListener("click", applyCrop);
 }
 
-
 function applyCrop() {
-  if (!cropper || !activeInput) return;
+    if (!cropper || !activeInput) return;
 
-  cropper.getCroppedCanvas({
-    width: 600,
-    height: 600,
-    imageSmoothingQuality: "high",
-  }).toBlob(blob => {
+    const canvas = cropper.getCroppedCanvas({
+        width: 1200,
+        height: 1200,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: "high",
+    });
 
-    const file = new File(
-      [blob],
-      activeInput.name + ".jpg",
-      { type: "image/jpeg" }
+    canvas.toBlob(
+        (blob) => {
+            const fileName = activeInput.name + ".jpg";
+
+            const croppedFile = new File(
+                [blob],
+                fileName,
+                { type: "image/jpeg" }
+            );
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+
+            // 🔥 THIS LINE MAKES EVERYTHING WORK
+            activeInput.files = dataTransfer.files;
+
+            // Cleanup
+            cropper.destroy();
+            cropper = null;
+            cropModal.hide();
+
+            activeInput = null;
+        },
+        "image/jpeg",
+        0.9
     );
-
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    activeInput.files = dt.files;
-
-    cropper.destroy();
-    cropper = null;
-
-    bootstrap.Modal
-      .getInstance(document.getElementById("imageCropModal"))
-      .hide();
-
-  }, "image/jpeg", 0.9);
 }

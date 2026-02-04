@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plan Expired</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f5f7fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            color: #dc2626;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: #374151;
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Plan Expired</h1>
+
+    <p>
+        Your subscription plan has expired.
+        Access to the system is temporarily restricted.
+    </p>
+
+    <div class="info">
+        Please contact the system administrator to renew your plan.
+    </div>
+
+    <a href="{{ url_for('auth.logout') }}">Logout</a>
+</div>
+
+
+</body>
+</html>

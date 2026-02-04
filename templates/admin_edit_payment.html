@@ -1,100 +1,224 @@
 {% extends "base.html" %}
-{% block title %}Edit Payment{% endblock %}
+{% block title %}Edit Payment | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- Header -->
-  <div class="row mb-3">
-    <div class="col-8">
-      <h4 class="mb-0">Edit Payment</h4>
-      <p class="text-muted small">Update advance / payment entry</p>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FORM CARD --- */
+    .edit-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 700px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+    
+    .form-control:disabled, .form-select:disabled {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        border-color: #e2e8f0;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_payments') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-clock-rotate-left"></i> Payment History
+    </a>
+</div>
+
+<div class="container-fluid py-5 px-4">
+
+    <div class="edit-card">
+        
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Edit Payment Record</h5>
+            <p class="text-secondary small mb-0">Update details for an existing advance or payment.</p>
+        </div>
+
+        <div class="card-body-custom">
+            <form method="post">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Labour Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0 ps-0" value="{{ payment.labour.name }}" disabled>
+                        </div>
+                        <input type="hidden" name="labour_id" value="{{ payment.labour_id }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Site</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-map-pin"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0 ps-0" value="{{ payment.site.site_name }}" disabled>
+                        </div>
+                        <input type="hidden" name="site_id" value="{{ payment.site_id }}">
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" value="{{ payment.date }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Advance Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-secondary">₹</span>
+                            <input type="number" name="advance" class="form-control border-start-0 ps-0" 
+                                   value="{{ payment.advance or 0 }}" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label">Note / Reason</label>
+                    <textarea name="note" class="form-control" rows="3">{{ payment.note or '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_payments') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
+        </div>
     </div>
-    <div class="col-4 text-end">
-      <a href="{{ url_for('admin_bp.admin_payments') }}"
-         class="btn btn-sm btn-outline-secondary">
-        Back to Payments
-      </a>
-    </div>
-  </div>
-
-  <!-- Form -->
-  <div class="card">
-    <div class="card-body">
-      <form method="post">
-
-        <div class="row">
-          <!-- Labour -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Labour</label>
-            <!-- Labour (readonly) -->
-            <select class="form-control" disabled>
-              <option>{{ payment.labour.name }}</option>
-            </select>
-            <input type="hidden" name="labour_id" value="{{ payment.labour_id }}">
-          </div>
-
-          <!-- Site -->
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Site</label>
-            <!-- Site (readonly) -->
-            <select class="form-control" disabled>
-              <option>{{ payment.site.site_name }}</option>
-            </select>
-            <input type="hidden" name="site_id" value="{{ payment.site_id }}">
-
-          </div>
-        </div>
-
-        <div class="row">
-          <!-- Date -->
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Date</label>
-            <input type="date"
-                   name="date"
-                   class="form-control"
-                   value="{{ payment.date }}">
-          </div>
-
-          <!-- Advance -->
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Advance Amount</label>
-            <input type="number"
-                   name="advance"
-                   class="form-control" 
-                   step="0.01"
-                   value="{{ payment.advance or 0 }}">
-          </div>
-
-          <!-- Total Paid -->
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Total Paid</label>
-            <input type="number" name="total_paid" class="form-control" value="{{ payment.total_paid or 0 }}" readonly>
-          </div>
-        </div>
-
-        <!-- Note -->
-        <div class="mb-3">
-          <label class="form-label">Note</label>
-          <textarea name="note"
-                    class="form-control"
-                    rows="3">{{ payment.note or '' }}</textarea>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-4">
-          <button type="submit" class="btn btn-primary">
-            Save Changes
-          </button>
-          <a href="{{ url_for('admin_bp.admin_payments') }}"
-             class="btn btn-outline-secondary ms-2">
-            Cancel
-          </a>
-        </div>
-
-      </form>
-    </div>
-  </div>
 
 </div>
 {% endblock %}

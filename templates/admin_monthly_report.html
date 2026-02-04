@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Monthly Payroll Report | Admin{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FILTER BAR --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* Financial Numbers Styling */
+    .font-mono {
+        font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+        letter-spacing: -0.5px;
+    }
+    .text-amount-positive { color: var(--text-primary); }
+    .text-amount-negative { color: var(--danger); }
+    .text-amount-net { color: var(--success); font-weight: 700; }
+
+    /* Buttons */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-success-custom {
+        background-color: var(--success);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-success-custom:hover { background-color: #15803d; color: white; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">Monthly Payroll Report</h4>
+        <p class="text-secondary small mb-0">Generate comprehensive salary breakdowns including advances and expenses.</p>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Project Site</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-secondary">
+                        <i class="fa-solid fa-building"></i>
+                    </span>
+                    <select name="site_id" class="form-select border-start-0 ps-0" required>
+                        <option value="">Select Site...</option>
+                        {% for s in sites %}
+                            <option value="{{ s.id }}" {% if selected_site == s.id %}selected{% endif %}>
+                                {{ s.site_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Select Month</label>
+                <input type="month" name="month" class="form-control" value="{{ selected_month }}" required>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-calculator me-2"></i> Generate
+                </button>
+            </div>
+
+            {% if rows %}
+            <div class="col-md-3 text-end">
+                <a href="{{ url_for('admin_bp.monthly_report', site_id=selected_site, month=selected_month, export=1) }}" 
+                   class="btn-success-custom">
+                    <i class="fa-solid fa-file-excel"></i> Export to Excel
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if not selected_site or not selected_month %}
+        <div class="text-center py-5 border rounded-3 bg-white border-dashed" style="border-style: dashed !important;">
+            <div class="text-secondary opacity-25 mb-3">
+                <i class="fa-solid fa-magnifying-glass-chart fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">Ready to Generate</h6>
+            <p class="text-secondary small">Please select a site and month above to view the payroll report.</p>
+        </div>
+    
+    {% elif rows %}
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th width="3%">#</th>
+                            <th width="20%">Labour Name</th>
+                            <th width="8%" class="text-center">Morning Shifts</th>
+                            <th width="8%" class="text-center">Day Shifts</th>
+                            <th width="8%" class="text-center">Night Shifts</th>
+                            <th width="10%" class="text-center">Total</th>
+                            <th width="12%" class="text-end">Gross Pay</th>
+                            <th width="12%" class="text-end">Advance</th>
+                            <th width="10%" class="text-end">Expenses</th>
+                            <th width="12%" class="text-end bg-light fw-bold">Net Payable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rows %}
+                        <tr>
+                            <td class="text-secondary small">{{ loop.index }}</td>
+                            
+                            <td>
+                                <div class="fw-bold text-dark">{{ r.labour_name }}</div>
+                                <div class="small text-secondary" style="font-size: 0.75rem;">{{ r.site_name }}</div>
+                            </td>
+                            
+                            <td class="text-center">{{ r.morning_shift }}</td>
+                            <td class="text-center">{{ r.day_shift }}</td>
+                            <td class="text-center">{{ r.night_shift }}</td>
+                            <td class="text-center fw-bold bg-light">{{ r.total_shifts }}</td>
+
+                            <td class="text-end font-mono text-amount-positive">
+                                ₹{{ "%.2f"|format(r.total_pay) }}
+                            </td>
+                            
+                            <td class="text-end font-mono text-amount-negative">
+                                -₹{{ "%.2f"|format(r.advance_paid) }}
+                            </td>
+                            
+                            <td class="text-end font-mono text-secondary">
+                                -₹{{ "%.2f"|format(r.expenses) }}
+                            </td>
+
+                            <td class="text-end font-mono text-amount-net bg-light">
+                                ₹{{ "%.2f"|format(r.net_payable) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr class="bg-light fw-bold border-top-2">
+                            <td colspan="5" class="text-end text-secondary text-uppercase small pt-3">Total Payable</td>
+                            <td colspan="4" class="text-end pt-3 text-dark fs-6">
+                                (Export to view totals)
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-3 border">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-file-invoice fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Payroll Data Found</h6>
+            <p class="text-secondary small">There are no attendance records for this site in the selected month.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

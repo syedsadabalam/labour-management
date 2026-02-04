@@ -4,20 +4,88 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy import Index, UniqueConstraint
 
-db = SQLAlchemy()
+from extensions import db
+
+class Plan(db.Model):
+    __tablename__ = 'plans'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    price = db.Column(db.Integer, nullable=False)
+
+    max_sites = db.Column(db.Integer, nullable=False)
+    max_labours = db.Column(db.Integer, nullable=False)
+
+    export_level = db.Column(
+        db.Enum('monthly', 'all', name='export_level_enum'),
+        nullable=False,
+        default='monthly'
+    )
+
+    allow_audit = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # ✅ This NOW works because Company.plan_id exists
+    companies = db.relationship(
+        'Company',
+        backref='plan',
+        lazy='select'
+    )
+
+    def __repr__(self):
+        return f"<Plan {self.name} ₹{self.price}>"
+
+
+class Company(db.Model):
+    __tablename__ = 'companies'
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(150), nullable=False, unique=True)
+
+    plan_id = db.Column(
+        db.Integer,
+        db.ForeignKey('plans.id'),
+        nullable=False
+    )
+
+    plan_expires_at = db.Column(db.Date, nullable=True)
+
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    users = db.relationship('User', backref='company', lazy='select')
+    sites = db.relationship('Site', backref='company', lazy='select')
+
+    def __repr__(self):
+        return f"<Company {self.company_name}>"
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), nullable=False)
-    site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=True)
 
-    site = db.relationship('Site', back_populates='users', lazy='joined')
+    # ✅ THIS FK IS REQUIRED
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey('companies.id'),
+        nullable=True
+    )
+
+    site_id = db.Column(
+        db.Integer,
+        db.ForeignKey('sites.id'),
+        nullable=True
+    )
+
+    site = db.relationship('Site', back_populates='users')
 
     def __repr__(self):
-        return f"<User {self.id} {self.username}>"
+        return f"<User {self.username}>"
 
 class Site(db.Model):
     __tablename__ = 'sites'
@@ -26,6 +94,11 @@ class Site(db.Model):
     address = db.Column(db.String(512), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     location = db.Column(db.String(255), nullable=True)
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey('companies.id'),
+        nullable=False
+    )
 
     labours = db.relationship('Labour', back_populates='site', lazy='select')
     payments = db.relationship('Payment', back_populates='site', lazy='select')
@@ -62,6 +135,13 @@ class Labour(db.Model):
     site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
 
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey('companies.id'),
+        nullable=False
+    )
+
+
     # Relationships
     site = db.relationship('Site', back_populates='labours', lazy='joined')
     attendances = db.relationship('Attendance', back_populates='labour', lazy='dynamic')
@@ -76,17 +156,39 @@ class Labour(db.Model):
     def __repr__(self):
         return f"<Labour {self.id} {self.name} ({self.phone})>"
 
+class Payment(db.Model):
+    __tablename__ = 'payments'
 
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    labour_id = db.Column(db.Integer, db.ForeignKey('labours.id'), nullable=False)
+    site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=False)
+
+    date = db.Column(db.Date, nullable=True)
+    advance = db.Column(db.Float, nullable=True)
+    note = db.Column(db.String(255), nullable=True)
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_by = db.relationship('User', lazy='joined')
+
+    labour = db.relationship('Labour', back_populates='payments', lazy='joined')
+    site = db.relationship('Site', back_populates='payments', lazy='joined')
+
+
+    def __repr__(self):
+        return f"<Payment {self.id} labour={self.labour_id} advance={self.advance}>"
 
 class Attendance(db.Model):
     __tablename__ = 'attendance'
 
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     labour_id = db.Column(db.Integer, db.ForeignKey('labours.id'), nullable=False)
     site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=False)
 
     date = db.Column(db.Date, nullable=False)
-
+    
+    morning_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
     day_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
     night_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -108,38 +210,24 @@ class Attendance(db.Model):
         Index('idx_attendance_labour_date', 'labour_id', 'date'),
     )
 
-class Payment(db.Model):
-    __tablename__ = 'payments'
 
-    id = db.Column(db.Integer, primary_key=True)
-
-    labour_id = db.Column(db.Integer, db.ForeignKey('labours.id'), nullable=False)
-    site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=False)
-
-    date = db.Column(db.Date, nullable=True)
-    advance = db.Column(db.Float, nullable=True)
-    note = db.Column(db.String(255), nullable=True)
-
-    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    labour = db.relationship('Labour', back_populates='payments', lazy='joined')
-    site = db.relationship('Site', back_populates='payments', lazy='joined')
-    created_by = db.relationship('User', lazy='joined')
-
-    def __repr__(self):
-        return f"<Payment {self.id} labour={self.labour_id} advance={self.advance}>"
 
 
 class LabourMonthlyExpenses(db.Model):
     __tablename__ = 'labour_monthly_expenses'
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     labour_id = db.Column(db.Integer, db.ForeignKey('labours.id'), nullable=False)
     site_id = db.Column(db.Integer, db.ForeignKey('sites.id'), nullable=False)
     month = db.Column(db.String(7), nullable=False)  # YYYY-MM
     mess_amount = db.Column(db.Float, nullable=False)
     canteen_amount = db.Column(db.Float, nullable=False)
     entered_by = db.Column(db.Integer, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
     updated_at = db.Column(db.DateTime, nullable=True)
 
     labour = db.relationship('Labour', back_populates='monthly_expenses', lazy='joined')
@@ -150,6 +238,7 @@ class LabourMonthlyExpenses(db.Model):
 class AuditLog(db.Model):
     __tablename__ = 'audit_log'
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
     username = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), nullable=True)
@@ -157,37 +246,20 @@ class AuditLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
 
     def __repr__(self):
         return f"<AuditLog {self.id} action={self.action}>"
-
-# helper function — standalone so other modules can import log_event
-def log_event(user_id=None, username=None, role=None, site_id=None,
-              action=None, details=None, ip_address=None, commit=True):
-    entry = AuditLog(
-        user_id=user_id,
-        username=username,
-        role=role,
-        site_id=site_id,
-        action=action or '',
-        details=str(details) if details is not None else None,
-        ip_address=ip_address,
-        created_at=datetime.utcnow()
-    )
-    db.session.add(entry)
-    if commit:
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
-    return entry
 
 class AuditLogArchive(db.Model):
     __tablename__ = 'audit_log_archive'
 
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
     username = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), nullable=True)
@@ -195,7 +267,11 @@ class AuditLogArchive(db.Model):
     action = db.Column(db.String(100), nullable=False)
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
 
     def __repr__(self):
         return f"<AuditLogArchive {self.id} action={self.action}>"

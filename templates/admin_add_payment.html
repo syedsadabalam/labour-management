@@ -1,147 +1,268 @@
 {% extends "base.html" %}
-{% block title %}Add Payment{% endblock %}
+{% block title %}Record Advance Payment | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h4 class="mb-0">Add Payment</h4>
-      <p class="text-muted small">Record labour advance payment</p>
-    </div>
-    <a href="{{ url_for('admin_bp.admin_payments') }}"
-       class="btn btn-sm btn-outline-secondary">
-      Back to Payments
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --success: #16a34a;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FORM CARD --- */
+    .payment-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 700px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+    
+    /* Disabled inputs look cleaner */
+    .form-control:disabled, .form-select:disabled {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        border-color: #e2e8f0;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
     </a>
-  </div>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_payments') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-clock-rotate-left"></i> Payment History
+    </a>
+</div>
 
-  <div class="card">
-    <div class="card-body">
+<div class="container-fluid py-5 px-4">
 
-      <form method="post">
-
-        <!-- Labour + Site -->
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Labour</label>
-            <select class="form-select" id="labour_id" name="labour_id" required>
-              <option value="">-- Select Labour --</option>
-              {% for labour in labours %}
-                <option 
-                  value="{{ labour.id }}"
-                  data-site-id="{{ labour.site_id }}"
-                  data-site-name="{{ labour.site.site_name if labour.site }}"
-                >
-                  {{ labour.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">Site</label>
-
-            <!-- Disabled select (UI only) -->
-            <select class="form-select" id="site_display" disabled>
-              <option value="">Auto-selected</option>
-            </select>
-
-            <!-- Hidden field (actual submitted value) -->
-            <input type="hidden" id="site_id" name="site_id">
-          </div>
+    <div class="payment-card">
+        
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Record Advance Payment</h5>
+            <p class="text-secondary small mb-0">Log a new cash advance for a labourer.</p>
         </div>
 
-        <!-- Date + Advance -->
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Date</label>
-            <input type="date"
-              id="payment_date"
-              name="date"
-              class="form-control"
-              required>
+        <div class="card-body-custom">
+            <form method="post">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Labour <span class="text-danger">*</span></label>
+                        <select class="form-select" id="labour_id" name="labour_id" required>
+                            <option value="">-- Choose Worker --</option>
+                            {% for labour in labours %}
+                                <option value="{{ labour.id }}" 
+                                        data-site-id="{{ labour.site_id }}" 
+                                        data-site-name="{{ labour.site.site_name if labour.site }}">
+                                    {{ labour.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-          </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Assigned Site</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary">
+                                <i class="fa-solid fa-map-pin"></i>
+                            </span>
+                            <select class="form-select border-start-0 ps-0 bg-light" id="site_display" disabled>
+                                <option value="">(Auto-selected)</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="site_id" name="site_id">
+                    </div>
+                </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Advance Amount</label>
-            <input type="number"
-                   name="advance"
-                   class="form-control"
-                   step="0.01"
-                   min="0"
-                   required>
-          </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Date <span class="text-danger">*</span></label>
+                        <input type="date" id="payment_date" name="date" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Amount (₹) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-secondary">₹</span>
+                            <input type="number" name="advance" class="form-control border-start-0 ps-0" 
+                                   placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label">Notes / Reason (Optional)</label>
+                    <textarea name="note" class="form-control" rows="3" placeholder="e.g. Medical emergency advance"></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-check-circle"></i> Save Payment
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_payments') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
         </div>
-
-        <!-- Note -->
-        <div class="mb-3">
-          <label class="form-label">Note</label>
-          <textarea name="note"
-                    class="form-control"
-                    rows="3"
-                    placeholder="Optional"></textarea>
-        </div>
-
-        <!-- Actions -->
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-success">
-            Add Payment
-          </button>
-          <a href="{{ url_for('admin_bp.admin_payments') }}"
-             class="btn btn-outline-secondary">
-            Cancel
-          </a>
-        </div>
-
-      </form>
-
     </div>
-  </div>
 
 </div>
 
 <script>
-document.getElementById('labour_id').addEventListener('change', function () {
-  const selected = this.options[this.selectedIndex];
-  const siteId = selected.getAttribute('data-site-id');
-  const siteName = selected.getAttribute('data-site-name');
+    // Auto-populate Site Logic
+    document.getElementById('labour_id').addEventListener('change', function () {
+        const selected = this.options[this.selectedIndex];
+        const siteId = selected.getAttribute('data-site-id');
+        const siteName = selected.getAttribute('data-site-name');
 
-  const siteDisplay = document.getElementById('site_display');
-  const siteHidden = document.getElementById('site_id');
+        const siteDisplay = document.getElementById('site_display');
+        const siteHidden = document.getElementById('site_id');
 
-  if (siteId) {
-    siteDisplay.innerHTML = `<option>${siteName}</option>`;
-    siteHidden.value = siteId;
-  } else {
-    siteDisplay.innerHTML = `<option>Auto-selected</option>`;
-    siteHidden.value = '';
-  }
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const dateInput = document.getElementById('payment_date');
-
-    // today's date in YYYY-MM-DD
-    const today = new Date().toISOString().split('T')[0];
-
-    // auto-select today by default
-    dateInput.value = today;
-
-    // block future dates in calendar UI
-    dateInput.setAttribute('max', today);
-
-    // extra safety: if someone manually types a future date
-    dateInput.addEventListener('change', function () {
-        if (this.value > today) {
-            alert('Future dates are not allowed');
-            this.value = today;
+        if (siteId) {
+            siteDisplay.innerHTML = `<option>${siteName}</option>`;
+            siteHidden.value = siteId;
+        } else {
+            siteDisplay.innerHTML = `<option>(Auto-selected)</option>`;
+            siteHidden.value = '';
         }
     });
-});
-</script>
 
+    // Date Logic (Default Today + Block Future)
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateInput = document.getElementById('payment_date');
+        const today = new Date().toISOString().split('T')[0];
+
+        dateInput.value = today;
+        dateInput.setAttribute('max', today);
+
+        dateInput.addEventListener('change', function () {
+            if (this.value > today) {
+                alert('Future dates are not allowed for payments.');
+                this.value = today;
+            }
+        });
+    });
+</script>
 
 {% endblock %}

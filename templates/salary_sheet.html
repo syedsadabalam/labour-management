@@ -1,80 +1,285 @@
 {% extends "base.html" %}
-{% block title %}Labour Salary Sheet{% endblock %}
-{% block page_title %}Labour Salary Sheet{% endblock %}
+{% block title %}Salary Sheet | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- FILTER -->
-  <form method="get" class="card shadow-sm border-0 mb-4">
-    <div class="card-body row g-3 align-items-end">
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --success: #16a34a;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-      <div class="col-md-4">
-        <label class="form-label fw-semibold">Site</label>
-        <select name="site_id" class="form-select" required>
-          <option value="">Select Site</option>
-          {% for s in sites %}
-            <option value="{{ s.id }}" {% if selected_site == s.id %}selected{% endif %}>
-              {{ s.site_name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Month</label>
-        <input type="month" name="month" class="form-control" value="{{ selected_month }}" required>
-      </div>
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-      <div class="col-md-2">
-        <button class="btn btn-primary w-100">Generate</button>
-      </div>
+    /* --- FILTER CARD --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
 
-      {% if rows %}
-      <div class="col-md-2">
-        <a href="{{ request.full_path }}&export=1" class="btn btn-success w-100">
-          <i class="fa-solid fa-file-excel"></i> Export
-        </a>
-      </div>
-      {% endif %}
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* --- TYPOGRAPHY UTILS --- */
+    .font-mono {
+        font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+        letter-spacing: -0.5px;
+    }
+    .text-amount {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-success-custom {
+        background-color: var(--success);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-success-custom:hover { background-color: #15803d; color: white; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">Labour Salary Sheet</h4>
+        <p class="text-secondary small mb-0">Generate bank-ready payout lists for specific sites and months.</p>
     </div>
-  </form>
 
-  {% if rows %}
-  <div class="card shadow-sm border-0">
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Sl. No.</th>
-            <th>Name</th>
-            <th>Bank Account</th>
-            <th>IFSC Code</th>
-            <th>Total Pay (₹)</th>
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Project Site</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-secondary">
+                        <i class="fa-solid fa-building"></i>
+                    </span>
+                    <select name="site_id" class="form-select border-start-0 ps-0" required>
+                        <option value="">Select Site...</option>
+                        {% for s in sites %}
+                            <option value="{{ s.id }}" {% if selected_site == s.id %}selected{% endif %}>
+                                {{ s.site_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in rows %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ r.name }}</td>
-            <td>{{ r.bank_account or '-' }}</td>
-            <td>{{ r.ifsc_code or '-' }}</td>
-            <td class="fw-semibold">₹{{ "%.2f"|format(r.total_pay) }}</td>
-          </tr>
-          {% endfor %}
-          <tr class="table-secondary fw-bold">
-            <td colspan="4" class="text-end">TOTAL</td>
-            <td>₹{{ "%.2f"|format(grand_total) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% elif selected_site and selected_month %}
-    <div class="text-muted text-center py-4">No data found.</div>
-  {% endif %}
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary text-uppercase mb-1">Payroll Month</label>
+                <input type="month" name="month" class="form-control" value="{{ selected_month }}" required>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-bolt"></i> Generate
+                </button>
+            </div>
+
+            {% if rows %}
+            <div class="col-md-3 text-end">
+                <a href="{{ request.full_path }}&export=1" class="btn-success-custom">
+                    <i class="fa-solid fa-file-excel"></i> Download Excel
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if not selected_site or not selected_month %}
+        <div class="text-center py-5 border rounded-3 bg-white border-dashed" style="border-style: dashed !important;">
+            <div class="text-secondary opacity-25 mb-3">
+                <i class="fa-solid fa-money-check-dollar fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">Ready to Process Payroll</h6>
+            <p class="text-secondary small">Select a site and month to generate the salary sheet.</p>
+        </div>
+
+    {% elif rows %}
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="25%">Labour Name</th>
+                            <th width="30%">Bank Account</th>
+                            <th width="20%">IFSC Code</th>
+                            <th width="20%" class="text-end">Total Pay (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rows %}
+                        <tr>
+                            <td class="text-secondary small">{{ loop.index }}</td>
+                            
+                            <td class="fw-bold text-dark">
+                                {{ r.name }}
+                            </td>
+
+                            <td class="font-mono text-secondary">
+                                {% if r.bank_account %}
+                                    {{ r.bank_account }}
+                                {% else %}
+                                    <span class="text-muted opacity-50 small">-- Not Linked --</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="font-mono text-secondary">
+                                {% if r.ifsc_code %}
+                                    {{ r.ifsc_code }}
+                                {% else %}
+                                    <span class="text-muted opacity-50 small">-</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end font-mono text-amount">
+                                ₹{{ "%.2f"|format(r.total_pay) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr class="bg-light border-top-2">
+                            <td colspan="4" class="text-end text-secondary fw-bold text-uppercase pt-3 pb-3">
+                                Grand Total Payout
+                            </td>
+                            <td class="text-end font-mono fw-bold text-dark fs-6 pt-3 pb-3">
+                                ₹{{ "%.2f"|format(grand_total) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-3 border">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-file-invoice fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Records Found</h6>
+            <p class="text-secondary small">No payable salaries found for the selected criteria.</p>
+        </div>
+    {% endif %}
 
 </div>
 {% endblock %}

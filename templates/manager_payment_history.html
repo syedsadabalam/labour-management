@@ -1,55 +1,260 @@
 {% extends "base.html" %}
-{% block title %}Advance Payment History{% endblock %}
-{% block page_title %}Advance Payment History{% endblock %}
+{% block title %}Payment History | Manager{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-white fw-semibold">
-      Advance Payment History
-    </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-    <div class="card-body p-0">
-      {% if payments %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>#</th>
-              <th>Labour Name</th>
-              <th>Phone</th>
-              <th>Date</th>
-              <th>Advance Amount</th>
-              <th>Note</th>
-              <th>Added By</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in payments %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ p.labour.name }}</td>
-                <td>{{ p.labour.phone or '-' }}</td>
-                <td>{{ p.date.strftime('%d-%m-%Y') if p.date else '-' }}</td>
-                <td>₹{{ p.advance }}</td>
-                <td>{{ p.note or '-' }}</td>
-                <td>
-                {{ p.created_by.username if p.created_by else '—' }}
-                </td>
-            </tr>
-            {% endfor %}
-          </tbody>
+    /* --- INSIGHT WIDGET --- */
+    .insight-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
 
-        </table>
-      </div>
-      {% else %}
-        <div class="p-4 text-center text-muted">
-          No advance payments found.
+    /* --- FILTER BAR --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* --- TYPOGRAPHY UTILS --- */
+    .font-mono {
+        font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+        letter-spacing: -0.5px;
+    }
+    .text-amount {
+        color: #ef4444; /* Red for advances */
+        font-weight: 600;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-outline-custom {
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-secondary);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    .btn-outline-custom:hover { background-color: #f8fafc; border-color: #cbd5e1; }
+
+    /* Dashboard Button */
+    .btn-dashboard {
+        background-color: white;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 0 16px;
+        border-radius: 8px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-dashboard:hover {
+        background-color: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+</style>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Advance Payments</h4>
+            <p class="text-secondary small mb-0">History of cash advances given to crew.</p>
         </div>
-      {% endif %}
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('manager_bp.manager_dashboard') }}" class="btn-dashboard">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+            </a>
+            
+            <a href="{{ url_for('manager_bp.manager_add_payment') }}" class="btn-primary-custom" style="width: auto;">
+                <i class="fa-solid fa-plus me-2"></i> New Advance
+            </a>
+        </div>
     </div>
-  </div>
+
+    <div class="insight-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-light p-2 text-danger"><i class="fa-solid fa-money-bill-transfer"></i></div>
+            <div>
+                <div class="stat-label">Total Given (This View)</div>
+                <div class="stat-value">₹{{ "%.2f"|format(payments | sum(attribute='advance')) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            
+            <div class="col-md-5">
+                <label class="form-label small fw-bold text-secondary mb-1">SEARCH LABOUR</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-secondary">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="search" value="{{ search }}" class="form-control border-start-0 ps-0" 
+                           placeholder="Search by Name or Phone...">
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary mb-1">FILTER BY MONTH</label>
+                <input type="month" name="month" class="form-control" value="{{ month }}">
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn-primary-custom">Apply Filter</button>
+                <a href="{{ url_for('manager_bp.manager_payment_history') }}" class="btn-outline-custom">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-card">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="30%">Labour Details</th>
+                        <th width="20%">Date</th>
+                        <th width="20%">Amount (₹)</th>
+                        <th width="25%">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td class="text-secondary small">{{ loop.index + ((pagination.page - 1) * pagination.per_page) }}</td>
+                        
+                        <td>
+                            <div class="fw-bold text-dark">{{ p.labour.name }}</div>
+                            <div class="small text-secondary"><i class="fa-solid fa-phone me-1" style="font-size: 10px;"></i>{{ p.labour.phone }}</div>
+                        </td>
+
+                        <td class="text-dark">{{ p.date.strftime('%d %b, %Y') }}</td>
+
+                        <td class="font-mono text-amount">
+                            ₹{{ "%.2f"|format(p.advance) }}
+                        </td>
+
+                        <td class="text-secondary small fst-italic">
+                            {{ p.note or "-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if pagination.pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+            <div class="text-secondary small">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('manager_bp.manager_payment_history', page=pagination.prev_num, search=search, month=month) }}">Previous</a>
+                    </li>
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('manager_bp.manager_payment_history', page=pagination.next_num, search=search, month=month) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-solid fa-file-invoice-dollar fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Payments Found</h6>
+            <p class="text-secondary small">No advance records match your criteria.</p>
+        </div>
+        {% endif %}
+    </div>
 
 </div>
 {% endblock %}

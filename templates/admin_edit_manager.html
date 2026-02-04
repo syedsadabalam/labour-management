@@ -1,49 +1,207 @@
 {% extends "base.html" %}
+{% block title %}Edit Manager | Admin{% endblock %}
+
 {% block content %}
 
-<div class="card shadow-sm border-0">
-  <div class="card-header bg-white border-bottom fw-semibold">
-    Edit Manager Details
-  </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
 
-  <div class="card-body p-4">
-    <form method="POST" action="{{ url_for('admin_bp.admin_edit_manager', manager_id=manager.id) }}">
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
 
-      <!-- USERNAME -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Username</label>
-        <input type="text" class="form-control" name="username" value="{{ manager.username }}" required>
-      </div>
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-      <!-- PASSWORD -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Password</label>
-        <input type="password" class="form-control" name="password" placeholder="Leave blank to keep unchanged">
-      </div>
+    /* --- FORM CARD --- */
+    .edit-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 600px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
 
-      <!-- SITE -->
-      <div class="mb-4">
-        <label class="form-label fw-semibold">Assign Site</label>
-        <select name="site_id" class="form-select" required>
-          <option value="" disabled>Select Site</option>
-          {% for site in sites %}
-            <option value="{{ site.id }}" {% if manager.site_id == site.id %}selected{% endif %}>
-              {{ site.site_name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
 
-      <!-- BUTTONS -->
-      <div class="text-end">
-        <button type="submit" class="btn btn-success px-4">
-          <i class="fa-solid fa-floppy-disk"></i> Save Changes
-        </button>
-        <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
-      </div>
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
 
-    </form>
-  </div>
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
 </div>
 
+<div class="container-fluid py-5 px-4">
+
+    <div class="edit-card">
+        
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Edit Manager Profile</h5>
+            <p class="text-secondary small mb-0">Update login credentials or reassign site access.</p>
+        </div>
+
+        <div class="card-body-custom">
+            <form method="POST" action="{{ url_for('admin_bp.admin_edit_manager', manager_id=manager.id) }}">
+                
+                <div class="mb-4">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control border-start-0 ps-0" 
+                               value="{{ manager.username }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Password Change</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control border-start-0 ps-0" 
+                               placeholder="Enter new password (leave blank to keep current)">
+                    </div>
+                    <div class="form-text small text-muted mt-2">
+                        Only fill this if you want to reset the manager's password.
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label">Assigned Site</label>
+                    <select name="site_id" class="form-select" required>
+                        <option value="" disabled>Select Site</option>
+                        {% for site in sites %}
+                            <option value="{{ site.id }}" {% if manager.site_id == site.id %}selected{% endif %}>
+                                {{ site.site_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

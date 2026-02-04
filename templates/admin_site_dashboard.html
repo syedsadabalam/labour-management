@@ -1,183 +1,337 @@
 {% extends "base.html" %}
-{% block title %}Site Overview{% endblock %}
+{% block title %}Site Dashboard | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h4 class="fw-semibold mb-1">{{ dashboard.site.site_name }}</h4>
-      <small class="text-muted">Manager: {{ dashboard.manager_name }}</small>
-    </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-    <a href="{{ url_for('admin_bp.admin_dashboard') }}"
-       class="btn btn-outline-secondary btn-sm">
-      ← Back
+    /* --- TOP NAV --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- STATS WIDGETS --- */
+    .stat-widget {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .stat-delta {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+    }
+    .text-trend-up { color: var(--success); }
+    .text-trend-down { color: var(--danger); }
+    .text-trend-neutral { color: var(--text-secondary); }
+
+    /* --- SECTION CARDS --- */
+    .section-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        height: 100%;
+    }
+    .section-header {
+        background: #fcfcfc;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .section-body {
+        padding: 1.5rem;
+    }
+
+    /* List Styles */
+    .absent-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .absent-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+    }
+    .absent-item:last-child { border-bottom: none; }
+    .absent-item i { color: var(--danger); font-size: 0.8rem; }
+
+    /* Financial Bar */
+    .financial-bar {
+        height: 8px;
+        background-color: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    .financial-fill {
+        height: 100%;
+        background-color: var(--warning);
+    }
+
+    /* Buttons */
+    .btn-back {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s;
+    }
+    .btn-back:hover { color: var(--text-primary); }
+
+    .btn-link-custom {
+        color: var(--primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .btn-link-custom:hover { text-decoration: underline; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
     </a>
-  </div>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <div class="ms-auto border-start ps-3 d-flex align-items-center text-secondary small">
+        <i class="fa-solid fa-location-dot me-2"></i> {{ dashboard.site.site_name }}
+    </div>
+</div>
 
+<div class="container-fluid py-4 px-4">
 
-  <!-- PREVIOUS DAY COMPARISON -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-
-        <h6 class="fw-semibold mb-3">
-          Previous Day Comparison
-          <!--     <small class="text-muted">({{ dashboard.yesterday_date.strftime('%d %b %Y') }})</small>      -->
-        </h6>
-
-        <div class="row text-center">
-
-          <!-- PRESENT -->
-          <div class="col-md-4">
-            <div class="border rounded p-3">
-              <div class="text-muted small mb-1">Present</div>
-
-              <div class="fs-4 fw-semibold">
-                {{ dashboard.present_today }}
-              </div>
-
-              {% set diff = dashboard.yesterday.present_diff %}
-              <div class="small
-                {% if diff > 0 %}text-success
-                {% elif diff < 0 %}text-danger
-                {% else %}text-muted{% endif %}">
-                {% if diff > 0 %}▲ +{{ diff }}
-                {% elif diff < 0 %}▼ {{ diff }}
-                {% else %}— No change{% endif %}
-              </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">{{ dashboard.site.site_name }}</h4>
+            <div class="text-secondary small">
+                Manager: <span class="fw-semibold text-dark">{{ dashboard.manager_name }}</span>
             </div>
-          </div>
-          
+        </div>
+        <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Back to Overview
+        </a>
+    </div>
 
-          <!-- SHIFTS -->
-          <div class="col-md-4">
-            <div class="border rounded p-3">
-              <div class="text-muted small mb-1">Shifts</div>
-
-              <div class="fs-4 fw-semibold">
-                {{ dashboard.total_shifts_today }}
-              </div>
-
-              {% set diff = dashboard.yesterday.shift_diff %}
-              <div class="small
-                {% if diff > 0 %}text-success
-                {% elif diff < 0 %}text-danger
-                {% else %}text-muted{% endif %}">
-                {% if diff > 0 %}▲ +{{ diff }}
-                {% elif diff < 0 %}▼ {{ diff }}
-                {% else %}— No change{% endif %}
-              </div>
+    <div class="row g-3 mb-4">
+        
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Present Today</div>
+                    <div class="stat-value">{{ dashboard.present_today }}</div>
+                </div>
+                {% set diff = dashboard.yesterday.present_diff %}
+                <div class="stat-delta {% if diff > 0 %}text-trend-up{% elif diff < 0 %}text-trend-down{% else %}text-trend-neutral{% endif %}">
+                    {% if diff > 0 %}<i class="fa-solid fa-arrow-up"></i> +{{ diff }}
+                    {% elif diff < 0 %}<i class="fa-solid fa-arrow-down"></i> {{ diff }}
+                    {% else %}<i class="fa-solid fa-minus"></i> No change{% endif %}
+                    <span class="ms-1 fw-normal text-secondary">vs yesterday</span>
+                </div>
             </div>
-          </div>
+        </div>
 
-          <!-- ATTENDANCE % -->
-          <div class="col-md-4">
-            <div class="border rounded p-3">
-              <div class="text-muted small mb-1">Attendance %</div>
-
-              <div class="fs-4 fw-semibold">
-                {{ dashboard.attendance_percent }}%
-              </div>
-
-              {% set diff = dashboard.yesterday.attendance_diff %}
-              <div class="small
-                {% if diff > 0 %}text-success
-                {% elif diff < 0 %}text-danger
-                {% else %}text-muted{% endif %}">
-                {% if diff > 0 %}▲ +{{ diff }}%
-                {% elif diff < 0 %}▼ {{ diff }}%
-                {% else %}— No change{% endif %}
-              </div>
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Total Shifts</div>
+                    <div class="stat-value">{{ dashboard.total_shifts_today }}</div>
+                </div>
+                {% set diff = dashboard.yesterday.shift_diff %}
+                <div class="stat-delta {% if diff > 0 %}text-trend-up{% elif diff < 0 %}text-trend-down{% else %}text-trend-neutral{% endif %}">
+                    {% if diff > 0 %}<i class="fa-solid fa-arrow-up"></i> +{{ diff }}
+                    {% elif diff < 0 %}<i class="fa-solid fa-arrow-down"></i> {{ diff }}
+                    {% else %}<i class="fa-solid fa-minus"></i> No change{% endif %}
+                    <span class="ms-1 fw-normal text-secondary">vs yesterday</span>
+                </div>
             </div>
-          </div>
-          
         </div>
 
-          <div class="text-end" >
-            <a href="{{ url_for(
-                'admin_bp.monthly_report',
-                site_id=dashboard.site.id,
-                month=dashboard.yesterday_date.strftime('%Y-%m')
-              ) }}"
-              class="btn btn-primary btn-sm">
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Attendance Rate</div>
+                    <div class="stat-value">{{ dashboard.attendance_percent }}%</div>
+                </div>
+                {% set diff = dashboard.yesterday.attendance_diff %}
+                <div class="stat-delta {% if diff > 0 %}text-trend-up{% elif diff < 0 %}text-trend-down{% else %}text-trend-neutral{% endif %}">
+                    {% if diff > 0 %}<i class="fa-solid fa-arrow-up"></i> +{{ diff }}%
+                    {% elif diff < 0 %}<i class="fa-solid fa-arrow-down"></i> {{ diff }}%
+                    {% else %}<i class="fa-solid fa-minus"></i> Stable{% endif %}
+                </div>
+            </div>
+        </div>
 
-              View Monthly Report →
-            </a>
-          </div>
+        <div class="col-md-3">
+            <div class="stat-widget">
+                <div>
+                    <div class="stat-label">Total Workforce</div>
+                    <div class="stat-value">{{ dashboard.total_labours }}</div>
+                </div>
+                <div class="stat-delta text-secondary">
+                    <i class="fa-solid fa-users me-1"></i> Registered
+                </div>
+            </div>
+        </div>
 
-
-      </div>
     </div>
 
-  <!-- METRICS -->
-  <div class="row g-3 mb-4">
+    <div class="row g-4">
+        
+        <div class="col-md-6">
+            <div class="section-card">
+                <div class="section-header">
+                    <span><i class="fa-solid fa-chart-line me-2 text-primary"></i>Financial Snapshot (MTD)</span>
+                    <a href="{{ url_for('admin_bp.monthly_report', site_id=dashboard.site.id, month=dashboard.yesterday_date.strftime('%Y-%m')) }}" 
+                       class="btn-link-custom">View Report</a>
+                </div>
+                <div class="section-body">
+                    
+                    <div class="row mb-4">
+                        <div class="col-6 border-end">
+                            <div class="text-secondary small text-uppercase fw-bold mb-1">Payroll</div>
+                            <div class="fs-3 fw-bold text-dark">₹{{ dashboard.payroll_mtd }}</div>
+                        </div>
+                        <div class="col-6 ps-4">
+                            <div class="text-secondary small text-uppercase fw-bold mb-1">Advances</div>
+                            <div class="fs-3 fw-bold text-dark">₹{{ dashboard.advances_mtd }}</div>
+                        </div>
+                    </div>
 
-    <div class="col-md-2">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Total Labours</h6>
-          <h4>{{ dashboard.total_labours }}</h4>
+                    <div>
+                        <div class="d-flex justify-content-between small fw-bold mb-1">
+                            <span>Risk Ratio (Advance / Payroll)</span>
+                            <span class="{{ 'text-danger' if dashboard.advance_ratio > 30 else 'text-success' }}">
+                                {{ dashboard.advance_ratio }}%
+                            </span>
+                        </div>
+                        <div class="financial-bar">
+                            <div class="financial-fill" style="width: {{ dashboard.advance_ratio }}%; background-color: {{ '#ef4444' if dashboard.advance_ratio > 30 else '#10b981' }}"></div>
+                        </div>
+                        <div class="form-text small mt-2">
+                            Keep this ratio below 30% for healthy cash flow.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="col-md-6">
+            <div class="section-card">
+                <div class="section-header">
+                    <span><i class="fa-solid fa-user-xmark me-2 text-danger"></i>Absent Today</span>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                        {{ dashboard.absent_today | length }} Absent
+                    </span>
+                </div>
+                <div class="section-body p-0">
+                    {% if dashboard.absent_today %}
+                        <div style="max-height: 220px; overflow-y: auto; padding: 1.5rem;">
+                            <ul class="absent-list">
+                                {% for l in dashboard.absent_today %}
+                                    <li class="absent-item">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                        <span class="fw-medium text-dark">{{ l.name }}</span>
+                                        <span class="ms-auto text-muted small">{{ l.phone }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-check-circle text-success fs-1 mb-2 opacity-50"></i>
+                            <p class="text-secondary fw-medium mb-0">100% Attendance Today!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
     </div>
-
-
-    <div class="col-md-2">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Payroll (MTD)</h6>
-          <h4>₹{{ dashboard.payroll_mtd }}</h4>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  
-
-
-  <!-- ABSENT TODAY -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h6 class="fw-semibold mb-3">Absent Today</h6>
-
-      {% if dashboard.absent_today %}
-        <ul class="mb-0">
-          {% for l in dashboard.absent_today %}
-            <li>{{ l.name }}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-muted mb-0">No absentees today.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- FINANCIAL SNAPSHOT -->
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h6 class="fw-semibold mb-3">Financial Snapshot</h6>
-
-      <div class="row">
-        <div class="col-md-4">
-          <strong>Payroll MTD</strong><br>
-          ₹{{ dashboard.payroll_mtd }}
-        </div>
-
-        <div class="col-md-4">
-          <strong>Advance MTD</strong><br>
-          ₹{{ dashboard.advances_mtd }}
-        </div>
-
-        <div class="col-md-4">
-          <strong>Advance Ratio</strong><br>
-          {{ dashboard.advance_ratio }}%
-        </div>
-      </div>
-    </div>
-  </div>
 
 </div>
 {% endblock %}

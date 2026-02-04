@@ -1,64 +1,312 @@
 {% extends "base.html" %}
-{% block title %}Monthly Attendance{% endblock %}
+{% block title %}Monthly Attendance | Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h5 class="fw-semibold mb-1">
-        📅 Monthly Attendance
-      </h5>
-      <small class="text-muted">
-        {{ site.site_name }} — {{ month }}/{{ year }}
-      </small>
-    </div>
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-    <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.id) }}"
-       class="btn btn-outline-secondary btn-sm">
-      ← Back to Site Overview
+    /* --- TOP NAV --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- INSIGHT CARDS --- */
+    .insight-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 100%;
+    }
+    .insight-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .icon-shifts { background: #eff6ff; color: var(--primary); }
+    .icon-avg { background: #dcfce7; color: var(--success); }
+    .icon-peak { background: #fff7ed; color: var(--warning); }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* Visual Bar */
+    .attendance-bar-bg {
+        height: 6px;
+        width: 100px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .attendance-bar-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 3px;
+    }
+
+    /* Shift Badges */
+    .shift-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .shift-morning { background: #fff7ed; color: #ea580c; border-color: #ffedd5; }
+    .shift-day { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+    .shift-night { background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; }
+
+    /* Buttons */
+    .btn-back {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s;
+    }
+    .btn-back:hover { color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
     </a>
-  </div>
-
-  <!-- TABLE -->
-  <div class="card shadow-sm">
-    <div class="card-body p-0">
-
-      <table class="table table-bordered mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Date</th>
-            <th>Present</th>
-            <th>Absent</th>
-            <th>Day Shift</th>
-            <th>Night Shift</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% for d in daily_stats %}
-          <tr>
-            <td>{{ d.date.strftime('%d %b %Y') }}</td>
-
-            <td class="{% if d.present > 0 %}text-success{% endif %}">
-              <strong>{{ d.present }}</strong>
-            </td>
-
-            <td class="{% if d.absent > 0 %}text-danger{% endif %}">
-              <strong>{{ d.absent }}</strong>
-            </td>
-
-            <td>{{ d.day }}</td>
-            <td>{{ d.night }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-
-      </table>
-
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <div class="ms-auto border-start ps-3 d-flex align-items-center text-secondary small">
+        <i class="fa-solid fa-location-dot me-2"></i> {{ site.site_name }}
     </div>
-  </div>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Monthly Attendance Log</h4>
+            <p class="text-secondary small mb-0">Daily breakdown of shifts and presence for {{ site.site_name }}.</p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            <form method="get" class="d-flex align-items-center gap-2 bg-white p-1 ps-3 border rounded-3 shadow-sm">
+                <span class="small fw-bold text-secondary text-uppercase">Month:</span>
+                <input type="month" name="month" class="form-control form-control-sm border-0 bg-transparent" 
+                       value="{{ selected_month }}" max="{{ today }}" onchange="this.form.submit()" 
+                       style="width: 140px; font-weight: 600;">
+            </form>
+
+            <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.id) }}" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if daily_stats %}
+        {% set total_shifts_mo = daily_stats | sum(attribute='total_shifts') %}
+        {% set total_present_mo = daily_stats | sum(attribute='present') %}
+        {% set days_count = daily_stats | length %}
+        {% set avg_attendance = (total_present_mo / days_count) | round(1) if days_count > 0 else 0 %}
+        
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="insight-card">
+                    <div class="insight-icon icon-shifts"><i class="fa-solid fa-layer-group"></i></div>
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Total Shifts</div>
+                        <div class="fs-4 fw-bold text-dark">{{ total_shifts_mo }}</div>
+                        <div class="small text-secondary">Logged this month</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="insight-card">
+                    <div class="insight-icon icon-avg"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Avg Daily Presence</div>
+                        <div class="fs-4 fw-bold text-dark">{{ avg_attendance }}</div>
+                        <div class="small text-secondary">Labours per day</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="insight-card">
+                    <div class="insight-icon icon-peak"><i class="fa-solid fa-moon"></i></div>
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Total Night Shifts</div>
+                        <div class="fs-4 fw-bold text-dark">{{ daily_stats | sum(attribute='night') }}</div>
+                        <div class="small text-secondary">Work done overnight</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="table-card">
+        {% if daily_stats %}
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="15%">Date</th>
+                        <th width="15%">Attendance Level</th>
+                        <th width="10%">Present</th>
+                        <th width="10%">Total Shifts</th>
+                        <th width="50%">Shift Breakdown</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in daily_stats %}
+                    <tr>
+                        <td class="fw-medium text-dark">
+                            {{ d.date.strftime('%d %b, %Y') }}
+                            <div class="small text-secondary fw-normal">{{ d.date.strftime('%A') }}</div>
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="attendance-bar-bg">
+                                    <div class="attendance-bar-fill" style="width: {{ (d.present / (d.total_shifts + 1)) * 100 }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="fw-bold text-dark fs-6">{{ d.present }}</td>
+
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ d.total_shifts }}</span>
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-2">
+                                {% if d.morning > 0 %}
+                                <span class="shift-badge shift-morning">
+                                    <i class="fa-regular fa-sun"></i> {{ d.morning }} Morning
+                                </span>
+                                {% endif %}
+                                
+                                {% if d.day > 0 %}
+                                <span class="shift-badge shift-day">
+                                    <i class="fa-solid fa-sun"></i> {{ d.day }} Day
+                                </span>
+                                {% endif %}
+                                
+                                {% if d.night > 0 %}
+                                <span class="shift-badge shift-night">
+                                    <i class="fa-solid fa-moon"></i> {{ d.night }} Night
+                                </span>
+                                {% endif %}
+
+                                {% if d.total_shifts == 0 %}
+                                    <span class="text-secondary small fst-italic">No activity</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-secondary opacity-25">
+                <i class="fa-regular fa-calendar-xmark fs-1"></i>
+            </div>
+            <h6 class="fw-bold text-dark">No Attendance Records</h6>
+            <p class="text-secondary small">No data found for {{ selected_month }}. Try selecting a different month.</p>
+        </div>
+        {% endif %}
+    </div>
 
 </div>
 {% endblock %}

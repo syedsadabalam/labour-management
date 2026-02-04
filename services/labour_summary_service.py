@@ -2,12 +2,9 @@
 
 from datetime import date
 from sqlalchemy import func
-from models import (
-    db,
-    Attendance,
-    Payment,
-    LabourMonthlyExpenses
-)
+from extensions import db
+from models import Attendance, Payment, LabourMonthlyExpenses
+
 
 def build_monthly_summary(labour, month, site_id=None):
     """
@@ -33,11 +30,19 @@ def build_monthly_summary(labour, month, site_id=None):
 
     attendance_rows = attendance_query.order_by(Attendance.date).all()
 
-    day_shifts = night_shifts = absent_days = 0
+    morning_shifts = 0
+    day_shifts = 0
+    night_shifts = 0
+    absent_days = 0
+
     calendar = []
 
     for r in attendance_rows:
         worked = False
+
+        if r.morning_shift_flag:
+            morning_shifts += 1
+            worked = True
 
         if r.day_shift_flag:
             day_shifts += 1
@@ -50,12 +55,14 @@ def build_monthly_summary(labour, month, site_id=None):
         if not worked:
             absent_days += 1
 
+
         calendar.append({
             "date": r.date.isoformat(),
             "status": "PRESENT" if worked else "ABSENT"
         })
 
-    total_shifts = day_shifts + night_shifts
+    total_shifts = morning_shifts + day_shifts + night_shifts
+
 
     # ---------- Earnings ----------
     daily_wage = float(labour.daily_wage or 0)
@@ -66,6 +73,7 @@ def build_monthly_summary(labour, month, site_id=None):
         func.coalesce(func.sum(Payment.advance), 0)
     ).filter(
         Payment.labour_id == labour.id,
+        Payment.date >= start_date,
         Payment.date < end_date
     )
 
@@ -92,6 +100,7 @@ def build_monthly_summary(labour, month, site_id=None):
 
     return {
         "attendance_summary": {
+            "morning_shifts": morning_shifts,
             "day_shifts": day_shifts,
             "night_shifts": night_shifts,
             "total_shifts": total_shifts,

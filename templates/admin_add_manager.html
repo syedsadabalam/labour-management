@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Add New Manager | Admin{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- NAVIGATION --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+
+    /* --- FORM CARD --- */
+    .add-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 600px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom active">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+</div>
+
+<div class="container-fluid py-5 px-4">
+
+    <div class="add-card">
+        
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">Register New Manager</h5>
+            <p class="text-secondary small mb-0">Create credentials for a new site supervisor.</p>
+        </div>
+
+        <div class="card-body-custom">
+            <form method="POST" action="{{ url_for('admin_bp.admin_add_manager') }}">
+                
+                <div class="mb-4">
+                    <label class="form-label">Manager Username <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control border-start-0 ps-0" 
+                               placeholder="e.g. site_supervisor_01" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary" style="border-color: #e2e8f0;">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control border-start-0 ps-0" 
+                               placeholder="Enter secure password" required>
+                    </div>
+                    <div class="form-text small text-muted mt-2">
+                        Use at least 6 characters, including letters and numbers.
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label">Assign Initial Site <span class="text-danger">*</span></label>
+                    <select name="site_id" class="form-select" required>
+                        <option value="">-- Select Project Site --</option>
+                        {% for site in sites %}
+                            <option value="{{ site.id }}">{{ site.site_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-user-plus"></i> Create Manager Account
+                </button>
+                
+                <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

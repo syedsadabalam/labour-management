@@ -4,89 +4,169 @@
 {% block content %}
 <div class="container-fluid">
 
-  <h4 class="mb-3">Edit Labour</h4>
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between mb-3">
+    <div>
+      <h4 class="mb-0">Edit Labour</h4>
+      <small class="text-muted">You can update details & documents</small>
+    </div>
+    <a href="{{ url_for('manager_bp.manager_labours') }}"
+       class="btn btn-sm btn-outline-secondary">
+      Back
+    </a>
+  </div>
 
   <form method="post" enctype="multipart/form-data">
+    <div class="card p-4">
 
-    <div class="row">
+      <!-- BASIC INFO -->
+      <div class="row g-3">
 
-      <div class="col-md-6 mb-3">
-        <label>Gate Pass ID</label>
-        <input type="text" name="gate_pass_id" class="form-control"
-               value="{{ labour.gate_pass_id or '' }}">
+        <div class="col-md-6">
+          <label class="form-label">Labour Name</label>
+          <input type="text" name="name" class="form-control"
+                 value="{{ labour.name }}" required>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" class="form-control"
+                 value="{{ labour.phone }}" maxlength="10">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Gate Pass ID</label>
+          <input type="text" name="gate_pass_id" class="form-control"
+                 value="{{ labour.gate_pass_id }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Bank Account</label>
+          <input type="text" name="bank_account" class="form-control"
+                 value="{{ labour.bank_account }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">IFSC Code</label>
+          <input type="text" name="ifsc_code" class="form-control"
+                 value="{{ labour.ifsc_code }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Daily Wage</label>
+          <input type="text" class="form-control"
+                 value="₹{{ labour.daily_wage }}" disabled>
+        </div>
+
       </div>
 
-      <div class="col-md-6 mb-3">
-        <label>Labour Name</label>
-        <input type="text" name="name" class="form-control"
-               value="{{ labour.name }}" required>
+      <hr class="my-4">
+
+      <!-- DOCUMENTS -->
+      <h6 class="mb-3">Photo & Documents</h6>
+
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label>Labour Photo</label>
+          <input type="file"
+                 name="photo"
+                 class="form-control image-input"
+                 accept="image/*"
+                 capture="environment">
+        </div>
+
+        <div class="col-md-4">
+          <label>Aadhaar Front</label>
+          <input type="file"
+                 name="aadhaar_front"
+                 class="form-control image-input"
+                 accept="image/*"
+                 capture="environment">
+        </div>
+
+        <div class="col-md-4">
+          <label>Aadhaar Back</label>
+          <input type="file"
+                 name="aadhaar_back"
+                 class="form-control image-input"
+                 accept="image/*"
+                 capture="environment">
+        </div>
+
+        <div class="col-md-4">
+          <label>Gate Pass Front</label>
+          <input type="file"
+                 name="gate_pass_front"
+                 class="form-control image-input"
+                 accept="image/*"
+                 capture="environment">
+        </div>
+
+        <div class="col-md-4">
+          <label>Gate Pass Back</label>
+          <input type="file"
+                 name="gate_pass_back"
+                 class="form-control image-input"
+                 accept="image/*"
+                 capture="environment">
+        </div>
+
       </div>
 
-      <div class="col-md-6 mb-3">
-        <label>Phone</label>
-        <input type="text" name="phone" class="form-control"
-               value="{{ labour.phone }}" maxlength="10" required>
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Bank Account</label>
-        <input type="text" name="bank_account" class="form-control"
-               value="{{ labour.bank_account }}">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>IFSC Code</label>
-        <input type="text" name="ifsc_code" class="form-control"
-               value="{{ labour.ifsc_code or '' }}">
-      </div>
-
-      <!-- 🔒 READ-ONLY FIELDS -->
-      <div class="col-md-6 mb-3">
-        <label>Daily Wage</label>
-        <input type="text" class="form-control"
-               value="{{ labour.daily_wage }}" disabled>
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          Update Labour
+        </button>
+        <a href="{{ url_for('manager_bp.manager_labours') }}"
+           class="btn btn-outline-secondary">
+          Cancel
+        </a>
       </div>
 
     </div>
-    <h5>Photo & Documents</h5>
-    <hr>
-
-    <!-- Documents (allowed) -->
-    <div class="row">
-
-      <div class="col-md-4 mb-3">
-        <label>Labour Photo</label>
-        <input type="file" name="photo" class="form-control image-input" accept="image/*">
-      </div>
-
-      <div class="col-md-4 mb-3">
-        <label>Aadhaar Front</label>
-        <input type="file" name="aadhaar_front" class="form-control image-input" accept="image/*">
-      </div>
-
-      <div class="col-md-4 mb-3">
-        <label>Aadhaar Back</label>
-        <input type="file" name="aadhaar_back" class="form-control image-input" accept="image/*">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Gate Pass Front</label>
-        <input type="file" name="gate_pass_front" class="form-control image-input" accept="image/*">
-      </div>
-
-      <div class="col-md-6 mb-3">
-        <label>Gate Pass Back</label>
-        <input type="file" name="gate_pass_back" class="form-control image-input" accept="image/*">
-      </div>
-
-    </div>
-
-    <div class="mt-4">
-      <button class="btn btn-primary">Update</button>
-      <a href="{{ url_for('manager_bp.labours') }}"
-         class="btn btn-outline-secondary ms-2">Cancel</a>
-    </div>
-
   </form>
+
 </div>
+<div class="modal fade" id="imageCropModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Adjust Image</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-2">
+        <div class="cropper-wrapper">
+          <img id="cropperImage" src="">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" id="cropConfirmBtn">Crop & Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SAME CROP / COMPRESS LOGIC AS ADMIN -->
+<!-- CropperJS -->
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+
+<!-- Your logic (ONLY ONCE) -->
+<script src="{{ url_for('static', filename='js/image-cropper.js') }}"></script>
+<style>
+  .cropper-wrapper {
+  width: 100%;
+  height: 60vh;
+}
+
+.cropper-wrapper img {
+  max-width: 100%;
+}
+
+</style>
+
 {% endblock %}

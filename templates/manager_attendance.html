@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance | Manager{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --success: #10b981;
+        --danger: #ef4444;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    /* --- INSIGHT WIDGET --- */
+    .insight-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+
+    /* --- DATE NAVIGATOR --- */
+    .date-nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fff;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        height: 38px; /* Match button height */
+    }
+    .date-input {
+        border: none;
+        font-weight: 600;
+        color: var(--text-primary);
+        outline: none;
+        background: transparent;
+        font-size: 0.9rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        max-height: 75vh; /* Scrollable body */
+        display: flex;
+        flex-direction: column;
+    }
+    .table-header-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8fafc;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-modern th {
+        padding: 1rem 1.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+        background-color: #f8fafc;
+    }
+    .table-modern td {
+        padding: 0.85rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        background: #fff;
+    }
+    
+    /* --- DROPDOWNS --- */
+    .status-select {
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .status-select.present {
+        background-color: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+    }
+    .status-select.absent {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    /* --- FOOTER --- */
+    .sticky-footer {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid var(--border);
+        padding: 1rem 1.5rem;
+        text-align: right;
+        z-index: 20;
+    }
+
+    .btn-save {
+        background-color: var(--success);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        transition: background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-save:hover { background-color: #15803d; }
+
+    /* Dashboard Button */
+    .btn-dashboard {
+        background-color: white;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 0 16px;
+        border-radius: 8px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-dashboard:hover {
+        background-color: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+</style>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Daily Attendance</h4>
+            <p class="text-secondary small mb-0">Mark presence for {{ selected_date }}</p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('manager_bp.manager_dashboard') }}" class="btn-dashboard">
+                <i class="fa-solid fa-arrow-left"></i> Dashboard
+            </a>
+
+            <form method="get" class="date-nav">
+                <span class="text-secondary small fw-bold text-uppercase"><i class="fa-regular fa-calendar"></i></span>
+                <input type="date" name="date" class="date-input" 
+                       value="{{ selected_date }}" max="{{ today }}" onchange="this.form.submit()">
+            </form>
+        </div>
+    </div>
+
+    <div class="insight-bar">
+        <div class="stat-item">
+            <div class="rounded-circle bg-light p-2 text-primary"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <div class="stat-label">Total Crew</div>
+                <div class="stat-value">{{ labours | length }}</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="rounded-circle bg-light p-2 text-success"><i class="fa-solid fa-user-check"></i></div>
+            <div>
+                <div class="stat-label">Present</div>
+                <div class="stat-value" id="count-present">-</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="rounded-circle bg-light p-2 text-danger"><i class="fa-solid fa-user-xmark"></i></div>
+            <div>
+                <div class="stat-label">Absent</div>
+                <div class="stat-value" id="count-absent">-</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="{{ url_for('manager_bp.manager_mark_attendance') }}">
+        <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead class="table-header-sticky">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="35%">Labour Name</th>
+                            <th width="20%">Morning Shift</th>
+                            <th width="20%">Day Shift</th>
+                            <th width="20%">Night Shift</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for labour in labours %}
+                            {% set a = attendance_map.get(labour.id) %}
+                            {% set record_exists = a is not none %}
+                            <tr>
+                                <td class="text-secondary small ps-4">{{ loop.index }}</td>
+                                
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if labour.photo_path %}
+                                            <img src="{{ url_for('static', filename=labour.photo_path) }}" class="rounded-circle border" style="width:36px;height:36px;object-fit:cover;">
+                                        {% else %}
+                                            <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center fw-bold text-secondary" style="width:36px;height:36px;">
+                                                {{ labour.name[0] }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ labour.name }}</div>
+                                            <div class="small text-secondary">{{ labour.phone or 'No Phone' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <select name="labour_{{ labour.id }}_morning" class="status-select" onchange="updateColor(this); updateCounts();">
+                                        <option value="absent" {% if not record_exists or a.morning_shift_flag == 0 %}selected{% endif %}>Absent</option>
+                                        <option value="present" {% if record_exists and a.morning_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <select name="labour_{{ labour.id }}_day" class="status-select" onchange="updateColor(this); updateCounts();">
+                                        <option value="absent" {% if not record_exists or a.day_shift_flag == 0 %}selected{% endif %}>Absent</option>
+                                        <option value="present" {% if record_exists and a.day_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <select name="labour_{{ labour.id }}_night" class="status-select" onchange="updateColor(this); updateCounts();">
+                                        <option value="absent" {% if not record_exists or a.night_shift_flag == 0 %}selected{% endif %}>Absent</option>
+                                        <option value="present" {% if record_exists and a.night_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center py-5 text-muted">No labours assigned to this site yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if labours %}
+            <div class="sticky-footer">
+                <button type="submit" class="btn-save">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Attendance
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+</div>
+
+<script>
+    function updateColor(select) {
+        select.classList.remove('present', 'absent');
+        select.classList.add(select.value);
+    }
+
+    function updateCounts() {
+        // Calculate dynamic stats for the widget based on current dropdown states
+        let presentCount = 0;
+        let totalDropdowns = 0;
+
+        // We count a labour as "Present" if they are marked Present in the DAY shift
+        // You can adjust logic to be (Morning OR Day OR Night) if preferred.
+        document.querySelectorAll('.status-select').forEach(select => {
+            if (select.name.includes('_day')) { 
+                totalDropdowns++;
+                if (select.value === 'present') presentCount++;
+            }
+        });
+
+        document.getElementById('count-present').innerText = presentCount;
+        document.getElementById('count-absent').innerText = totalDropdowns - presentCount;
+    }
+
+    // Init
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.status-select').forEach(el => updateColor(el));
+        updateCounts();
+    });
+</script>
+
+{% endblock %}

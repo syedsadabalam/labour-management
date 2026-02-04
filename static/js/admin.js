@@ -93,21 +93,6 @@ const currentPath = window.location.pathname.replace(/\/+$/, ""); // remove trai
     });
   });
 
-  /* =============================
-     6️⃣ SMOOTH SCROLL TO TOP
-  ============================= */
-  const scrollBtn = document.createElement("button");
-  scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
-  scrollBtn.className = "scroll-top-btn";
-  document.body.appendChild(scrollBtn);
-
-  window.addEventListener("scroll", () => {
-    scrollBtn.style.display = window.scrollY > 200 ? "flex" : "none";
-  });
-
-  scrollBtn.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
 
   /* =============================
      7️⃣ TABLE SEARCH FILTER (Optional)

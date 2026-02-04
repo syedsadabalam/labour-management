@@ -1,82 +1,190 @@
 {% extends "base.html" %}
-{% block title %}Add Advance{% endblock %}
-{% block page_title %}Add Advance{% endblock %}
+{% block title %}Record Advance | Manager{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-white fw-semibold">
-      Add Advance Payment
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+    }
+
+    /* --- FORM CARD --- */
+    .add-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        max-width: 600px; /* Centered focus */
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    .card-header-custom {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* --- FORM ELEMENTS --- */
+    .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    .form-control, .form-select {
+        border-color: var(--border);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+    .btn-cancel {
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.75rem;
+        display: block;
+        text-align: center;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
+
+    /* Dashboard Button */
+    .btn-dashboard {
+        background-color: white;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 0 16px;
+        border-radius: 8px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-dashboard:hover {
+        background-color: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+</style>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 max-width-600 mx-auto" style="max-width: 600px;">
+        <h4 class="fw-bold mb-0">Record Advance</h4>
+        <a href="{{ url_for('manager_bp.manager_dashboard') }}" class="btn-dashboard">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
     </div>
 
-    <div class="card-body">
-      <form method="post">
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Labour</label>
+    <div class="add-card">
         
-          <input type="text"
-                id="labourSearch"
-                class="form-control mb-2"
-                placeholder="Search labour by name or phone">
-
-          <select name="labour_id"
-                  id="labourSelect"
-                  class="form-select"
-                  size="6"
-                  required>
-            {% for labour in labours %}
-              <option value="{{ labour.id }}">
-                {{ labour.name }}{% if labour.phone %} ({{ labour.phone }}){% endif %}
-              </option>
-            {% endfor %}
-          </select>
+        <div class="card-header-custom">
+            <h5 class="fw-bold mb-1 text-dark">New Payment Entry</h5>
+            <p class="text-secondary small mb-0">Record cash advance given to a worker.</p>
         </div>
 
+        <div class="card-body-custom">
+            <form method="post">
+                
+                <div class="mb-4">
+                    <label class="form-label">Select Labour <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-secondary">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <select name="labour_id" class="form-select border-start-0 ps-0" required>
+                            <option value="">-- Choose Worker --</option>
+                            {% for labour in labours %}
+                                <option value="{{ labour.id }}">
+                                    {{ labour.name }} ({{ labour.phone }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" 
+                               value="{{ today }}" max="{{ today }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Advance Amount <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-secondary">₹</span>
+                            <input type="number" name="advance" class="form-control border-start-0 ps-0" 
+                                   placeholder="0.00" step="0.01" min="1" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label">Note / Reason (Optional)</label>
+                    <textarea name="note" class="form-control" rows="3" placeholder="e.g. Medical emergency, personal expense..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fa-solid fa-check-circle"></i> Save Advance
+                </button>
+                
+                <a href="{{ url_for('manager_bp.manager_payment_history') }}" class="btn-cancel">
+                    Cancel
+                </a>
+
+            </form>
         </div>
-
-        <div class="mb-3">
-          <input type="date" name="date" class="form-control" value="{{ today }}" max="{{ today }}" required>
-
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Advance Amount</label>
-          <input type="number" name="advance" class="form-control" min="0" step="0.01" required>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Note</label>
-          <textarea name="note" class="form-control" rows="2"></textarea>
-        </div>
-
-        <div class="text-end">
-          <button class="btn btn-success">
-            <i class="fa-solid fa-floppy-disk"></i> Save
-          </button>
-          <a href="{{ url_for('manager_bp.payment_history') }}" class="btn btn-outline-secondary ms-2">
-            Cancel
-          </a>
-        </div>
-
-      </form>
     </div>
-  </div>
 
 </div>
-<script>
-  const searchInput = document.getElementById('labourSearch');
-  const select = document.getElementById('labourSelect');
-
-  searchInput.addEventListener('keyup', function () {
-    const q = this.value.toLowerCase();
-    for (const option of select.options) {
-      option.style.display = option.text.toLowerCase().includes(q)
-        ? ''
-        : 'none';
-    }
-  });
-</script>
-
 {% endblock %}
