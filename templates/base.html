@@ -24,14 +24,16 @@
 
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="brand-icon">
-        <i class="fa-solid fa-layer-group"></i>
+      <div class="brand-logo-wrap">
+        <img src="{{ url_for('static', filename='landing_images/apnalabor.png') }}"
+            alt="ApnaLabor"
+            class="brand-logo">
       </div>
-      <div class="brand-info">
-        <h6 class="brand-name">Apna Labour</h6>
-        <span class="brand-role">Manager Panel</span>
-      </div>
+
+      
+
     </div>
+
 
     <div class="sidebar-nav">
       
@@ -102,11 +104,22 @@
   </aside>
 
   <main class="main-wrapper">
-    
     <header class="app-header">
-      <div class="header-left">
-         <h5 class="page-title mb-0">{% block page_title %}ApnaLabor™ Workforce Management System{% endblock %}</h5>
+    
+      <div class="header-left d-flex align-items-center gap-2">
+
+        <!-- Mobile toggle -->
+        <button class="btn btn-sm btn-outline-secondary d-md-none"
+                id="sidebarToggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <h6 class="page-title mb-0">
+          {% block page_title %}ApnaLabor™ Workforce Management System{% endblock %}
+        </h6>
+
       </div>
+
       
       <div class="header-right">
         <div class="site-badge">

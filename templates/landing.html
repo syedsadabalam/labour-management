@@ -301,6 +301,38 @@
       .audience-list li { justify-content: center; }
       .plan.popular { transform: none; }
     }
+
+    /* --- BRAND LOGO HEADER --- */
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-logo {
+    height: 42px;
+    width: auto;
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+  }
+
+  .brand-tagline {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+
   </style>
 </head>
 
@@ -308,10 +340,18 @@
 
   <header>
     <div class="container header-inner">
-      <div class="logo">
-        <i class="fa-solid fa-layer-group text-primary"></i>
-        <span>ApnaLabour</span>
+      <div class="logo-wrap">
+        <img 
+          src="/static/landing_images/logo.png"
+          alt="ApnaLabour Logo"
+          class="brand-logo"
+        >
+        <div class="brand-text">
+          <div class="brand-name">ApnaLabour</div>
+          <div class="brand-tagline">India’s Workforce Management System</div>
+        </div>
       </div>
+
       <nav class="main-nav">
         <a href="#problem">Why Us</a>
         <a href="#features">Features</a>
@@ -546,12 +586,12 @@
         <div class="footer-col">
           <h4>Contact</h4>
           <a href="tel:+918240153944">+91 82401 53944</a>
-          <a href="mailto:support@apnalabour.in">support@apnalabour.in</a>
+          <a href="mailto:support@apnalabour.in">syedsadab29@gmail.com</a>
         </div>
       </div>
       
       <div style="text-align: center; margin-top: 30px; font-size: 0.85rem; opacity: 0.6;">
-        &copy; 2026 | Apna Labor | Labour Management System. All rights reserved.
+        &copy; 2026 | Apna Labor | Labour Management System | All rights reserved.
       </div>
     </div>
   </footer>

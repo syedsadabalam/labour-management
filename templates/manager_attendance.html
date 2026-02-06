@@ -160,6 +160,26 @@
         border-color: #cbd5e1;
     }
 
+    .shift-cell {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-select.locked {
+        background-color: #f1f5f9;
+        color: #94a3b8;
+        border-color: #e2e8f0;
+        cursor: not-allowed;
+    }
+
+    .lock-icon {
+        font-size: 14px;
+        opacity: 0.7;
+        cursor: help;
+    }
+
+
 </style>
 
 <div class="container-fluid py-4 px-4">
@@ -217,9 +237,22 @@
                         <tr>
                             <th width="5%">#</th>
                             <th width="35%">Labour Name</th>
-                            <th width="20%">Morning Shift</th>
-                            <th width="20%">Day Shift</th>
-                            <th width="20%">Night Shift</th>
+                            <th width="20%">Morning (A)
+                                {% if not site_shift_rules.morning %}
+                                    <span class="lock-icon" title="Disabled by admin">🔒</span>
+                                {% endif %}</th>
+                            <th width="20%">Day (B)
+                                {% if not site_shift_rules.day %}
+                                    <span class="lock-icon" title="Disabled by admin">🔒</span>
+                                {% endif %}
+
+                            </th>
+                            <th width="20%">Night (C)
+                                {% if not site_shift_rules.night %}
+                                    <span class="lock-icon" title="Disabled by admin">🔒</span>
+                                {% endif %}
+
+                            </th>
                         </tr>
                     </thead>
                     <tbody>

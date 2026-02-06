@@ -8,33 +8,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Admin.js loaded successfully.");
 
-  /* =============================
-     1️⃣ SIDEBAR TOGGLE (Mobile)
-  ============================= */
-  const sidebar = document.querySelector(".sidebar");
-  const mainContent = document.querySelector(".main-content");
-
-  // Desktop (Dashboard Overview ☰ button)
-  const desktopToggle = document.getElementById("sidebarCollapseDesktop");
-
-  // Mobile (if exists)
-  const mobileToggle = document.getElementById("sidebarToggle");
-
-  function toggleSidebar() {
-    if (!sidebar || !mainContent) return;
-    sidebar.classList.toggle("collapsed");
-    mainContent.classList.toggle("expanded");
-  }
-
-  if (desktopToggle) {
-    desktopToggle.addEventListener("click", toggleSidebar);
-  }
-
-  if (mobileToggle) {
-    mobileToggle.addEventListener("click", toggleSidebar);
-  }
-
-
  /* =============================
    2️⃣ AUTO HIGHLIGHT ACTIVE LINK (FIXED)
 ============================= */
@@ -120,3 +93,19 @@ document.querySelectorAll('.kpi').forEach(k=>{
 });
 
 
+document.addEventListener("DOMContentLoaded", () => {
+  const toggleBtn = document.getElementById("sidebarToggle");
+  const sidebar = document.querySelector(".sidebar");
+
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+  }
+});
+
+document.querySelectorAll(".sidebar .nav-item").forEach(link => {
+  link.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+  });
+});

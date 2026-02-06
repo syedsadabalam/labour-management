@@ -1,316 +1,377 @@
 {% extends "base.html" %}
+{% block title %}Manage Labours | Admin{% endblock %}
+
 {% block content %}
 
-<div class="container-fluid">
+<style>
+    :root {
+        --bg-body: #f1f5f9;
+        --bg-surface: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Labours</h4>
+    /* --- TOP NAV (Admin Specific) --- */
+    .admin-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+        margin-bottom: 2rem;
+    }
+    .nav-pill-custom {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid transparent;
+    }
+    .nav-pill-custom:hover { background-color: #f8fafc; color: var(--primary); }
+    .nav-pill-custom.active { background-color: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
 
-    <div class="d-flex gap-2">
-      <a href="{{ url_for('admin_bp.admin_sites') }}" class="btn btn-outline-primary btn-sm">Sites</a>
-      <a href="{{ url_for('admin_bp.admin_managers') }}" class="btn btn-outline-primary btn-sm">Managers</a>
-      <a href="{{ url_for('admin_bp.admin_add_payment') }}" class="btn btn-outline-primary btn-sm">Add Advance</a>
-      <a href="{{ url_for('admin_bp.admin_add_labour') }}" class="btn btn-primary btn-sm">Add Labour</a>
+    /* --- FILTER BAR --- */
+    .filter-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- TABLE STYLES --- */
+    .table-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .table-modern tbody td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+    .table-modern tbody tr:last-child td { border-bottom: none; }
+    .table-modern tbody tr:hover { background-color: #f8fafc; }
+
+    /* Avatar & Links */
+    .labour-avatar {
+        width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+        background-color: #f1f5f9; display: flex; align-items: center; justify-content: center;
+        font-weight: 600; color: var(--text-secondary); border: 1px solid #e2e8f0;
+    }
+    .labour-link { 
+        color: var(--text-primary); font-weight: 600; text-decoration: none; cursor: pointer;
+    }
+    .labour-link:hover { color: var(--primary); text-decoration: underline; }
+
+    /* Action Buttons */
+    .btn-action-group { display: flex; gap: 4px; justify-content: flex-end; }
+    
+    .btn-icon {
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        background: white;
+    }
+    .btn-icon:hover { background: #f1f5f9; color: var(--primary); border-color: #e2e8f0; }
+    .btn-icon.danger:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+    /* Primary Button */
+    .btn-primary-custom {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-primary-custom:hover { background-color: var(--primary-hover); color: white; }
+
+</style>
+
+<div class="admin-nav sticky-top">
+    <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-building"></i> Sites
+    </a>
+    <a href="{{ url_for('admin_bp.admin_managers') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-users-gear"></i> Managers
+    </a>
+    <a href="{{ url_for('admin_bp.monthly_report') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-chart-pie"></i> Reports
+    </a>
+    <a href="{{ url_for('admin_bp.attendance_report') }}" class="nav-pill-custom">
+        <i class="fa-regular fa-clock"></i> Attendance
+    </a>
+    <a href="{{ url_for('admin_bp.labour_salary_sheet') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Salary Sheet
+    </a>
+    <a href="{{ url_for('admin_bp.admin_audit_logs') }}" class="nav-pill-custom">
+        <i class="fa-solid fa-list-ul"></i> Logs
+    </a>
+    <a href="{{ url_for('admin_bp.admin_labours') }}" class="nav-pill-custom active ms-auto border-start ps-3">
+        <i class="fa-solid fa-helmet-safety"></i> Labour List
+    </a>
+</div>
+
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Labour Management</h4>
+            <p class="text-secondary small mb-0">Total database of workers across all sites.</p>
+        </div>
+        
+        <a href="{{ url_for('admin_bp.admin_add_labour') }}" class="btn-primary-custom">
+            <i class="fa-solid fa-user-plus"></i> Add New Labour
+        </a>
     </div>
-  </div>
 
-  <!-- Search -->
-  <form method="get" class="card p-3 mb-3">
-    <div class="row g-2 align-items-end">
-
-      <div class="col-md-5">
-        <label class="form-label">Search (Name / Phone / Gate Pass)</label>
-        <input type="text"
-               name="search"
-               value="{{ search }}"
-               class="form-control"
-               placeholder="Enter name, phone or gate pass ID">
-      </div>
-
-      <div class="col-md-4">
-        <label class="form-label">Site</label>
-        <select name="site_id" class="form-select">
-          <option value="">All Sites</option>
-          {% for site in sites %}
-            <option value="{{ site.id }}"
-              {% if site_id|int == site.id %}selected{% endif %}>
-              {{ site.site_name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="col-md-3 d-flex gap-2">
-        <button class="btn btn-primary w-100">Apply</button>
-        <a href="{{ url_for('admin_bp.admin_labours') }}"
-           class="btn btn-outline-secondary w-100">Reset</a>
-      </div>
-
-    </div>
-  </form>
-
-  <!-- Table -->
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-
-        <thead class="table-light">
-          <tr>
-            <th style="width:50px">#</th>
-            <th style="min-width:280px">Labour</th>
-            <th>Bank Account</th>
-            <th>IFSC</th>
-            <th>Site</th>
-            <th>Daily Wage</th>
-            <th>Status</th>
-            <th style="width:120px">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-        {% for labour in labours %}
-          <tr>
-
-            <!-- Sl No -->
-            <td>{{ loop.index + ((pagination.page - 1) * pagination.per_page) }}</td>
-
-            <!-- Labour Identity -->
-            <td>
-              <div class="d-flex align-items-center gap-2">
-
-                <!-- Photo -->
-                {% if labour.photo_path %}
-                  <img src="{{ url_for('static', filename=labour.photo_path) }}"
-                       class="rounded-circle"
-                       style="width:100px;height:100px;object-fit:cover;">
-                {% else %}
-                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                       style="width:100px;height:100px;font-size:14px;">
-                    {{ labour.name[0] }}
-                  </div>
-                {% endif %}
-
-                <!-- Info -->
-                <div class="lh-sm">
-                  <div class="fw-semibold">
-                    <a href="#"
-                       class="labour-link text-decoration-none"
-                       data-labour-id="{{ labour.id }}">
-                      {{ labour.name }}
-                    </a>
-                  </div>
-
-                  {% if labour.gate_pass_id %}
-                    <div class="text-muted small">
-                      Gate Pass: {{ labour.gate_pass_id }}
-                    </div>
-                  {% endif %}
-
-                  <div class="text-muted small">
-                    📞 {{ labour.phone }}
-                  </div>
+    <form method="get" class="filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-bold text-secondary mb-1">SEARCH</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-secondary"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="search" value="{{ search }}" class="form-control border-start-0 ps-0" 
+                           placeholder="Name, Phone or Gate Pass ID...">
                 </div>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary mb-1">FILTER BY SITE</label>
+                <select name="site_id" class="form-select">
+                    <option value="">All Sites</option>
+                    {% for site in sites %}
+                    <option value="{{ site.id }}" {% if site_id|int == site.id %}selected{% endif %}>
+                        {{ site.site_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-              </div>
-            </td>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary w-100">Apply</button>
+                <a href="{{ url_for('admin_bp.admin_labours') }}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center text-decoration-none">Reset</a>
+            </div>
+        </div>
+    </form>
 
-            <!-- Bank -->
-            <td>{{ labour.bank_account or '-' }}</td>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="30%">Labour Profile</th>
+                        <th width="15%">Bank Details</th>
+                        <th width="15%">Site</th>
+                        <th width="10%">Wage</th>
+                        <th width="10%">Status</th>
+                        <th width="15%" class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for labour in labours %}
+                    <tr>
+                        <td class="text-secondary small">{{ loop.index + ((pagination.page - 1) * pagination.per_page) }}</td>
 
-            <!-- IFSC -->
-            <td>{{ labour.ifsc_code or '-' }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if labour.photo_path %}
+                                    <img src="{{ url_for('static', filename=labour.photo_path) }}" class="labour-avatar" alt="Photo">
+                                {% else %}
+                                    <div class="labour-avatar">{{ labour.name[0] | upper }}</div>
+                                {% endif %}
+                                
+                                <div>
+                                    <a href="#" class="labour-link" data-labour-id="{{ labour.id }}">
+                                        {{ labour.name }}
+                                    </a>
+                                    <div class="small text-secondary mt-1">
+                                        {% if labour.gate_pass_id %}
+                                            <span class="badge bg-light text-dark border me-1">{{ labour.gate_pass_id }}</span>
+                                        {% endif %}
+                                        <span><i class="fa-solid fa-phone me-1" style="font-size: 10px;"></i>{{ labour.phone }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
 
-            <!-- Site -->
-            <td>{{ labour.site.site_name }}</td>
+                        <td class="small text-secondary">
+                            {% if labour.bank_account %}
+                                <div class="text-dark font-monospace">{{ labour.bank_account }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ labour.ifsc_code }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
 
-            <!-- Wage -->
-            <td>₹{{ labour.daily_wage }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-map-pin text-danger small opacity-75"></i>
+                                <span class="fw-medium text-dark">{{ labour.site.site_name }}</span>
+                            </div>
+                        </td>
 
-            <!-- Status -->
-            <td>
-              {% if labour.is_active %}
-                <span class="badge bg-success">Active</span>
-              {% else %}
-                <span class="badge bg-secondary">Inactive</span>
-              {% endif %}
-            </td>
+                        <td class="fw-bold text-dark">₹{{ labour.daily_wage }}</td>
 
-            <!-- Actions -->
-            <td>
-              <div class="d-flex gap-1">
-                <a href="{{ url_for('admin_bp.admin_edit_labour', labour_id=labour.id) }}"
-                   class="btn btn-outline-primary btn-sm">Edit</a>
+                        <td>
+                            {% if labour.is_active %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-2">Inactive</span>
+                            {% endif %}
+                        </td>
 
-                <form method="post"
-                      action="{{ url_for('admin_bp.delete_labour', labour_id=labour.id) }}"
-                      onsubmit="return confirm('Are you sure you want to delete this labour?')">
-                  <button class="btn btn-danger btn-sm">Delete</button>
-                </form>
-              </div>
-            </td>
-
-          </tr>
-        {% endfor %}
-        </tbody>
-
-      </table>
+                        <td class="pe-4 text-end">
+                            <div class="btn-action-group">
+                                <a href="{{ url_for('admin_bp.admin_edit_labour', labour_id=labour.id) }}" 
+                                   class="btn-icon" title="Edit Profile">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                
+                                <form method="post" action="{{ url_for('admin_bp.delete_labour', labour_id=labour.id) }}" 
+                                      onsubmit="return confirm('Are you sure? This will delete all history for this labour.');" style="display:inline;">
+                                    <button class="btn-icon danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            No labours found matching your criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- Pagination -->
-  {% if pagination.pages > 1 %}
-  <nav class="mt-3">
-    <ul class="pagination">
-
-      {% if pagination.has_prev %}
-        <li class="page-item">
-          <a class="page-link"
-             href="{{ url_for('admin_bp.admin_labours', page=pagination.prev_num, search=search, site_id=site_id) }}">
-            Previous
-          </a>
-        </li>
-      {% endif %}
-
-      <li class="page-item disabled">
-        <span class="page-link">
-          Page {{ pagination.page }} of {{ pagination.pages }}
-        </span>
-      </li>
-
-      {% if pagination.has_next %}
-        <li class="page-item">
-          <a class="page-link"
-             href="{{ url_for('admin_bp.admin_labours', page=pagination.next_num, search=search, site_id=site_id) }}">
-            Next
-          </a>
-        </li>
-      {% endif %}
-
-    </ul>
-  </nav>
-  {% endif %}
+    {% if pagination.pages > 1 %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="small text-secondary">Page {{ pagination.page }} of {{ pagination.pages }}</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin_bp.admin_labours', page=pagination.prev_num, search=search, site_id=site_id) }}">Previous</a>
+                </li>
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin_bp.admin_labours', page=pagination.next_num, search=search, site_id=site_id) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 
 </div>
 
-
-  <!-- Labour Monthly Summary Modal -->
-  <div class="modal fade" id="labourSummaryModal" tabindex="-1">
+<div class="modal fade" id="labourSummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content">
-
         
-
-        <!-- 2️⃣ BODY -->
         <div class="modal-body">
           <div class="row">
 
-            <!-- LEFT SIDE -->
             <div class="col-md-7">
-
-              <!-- 1️⃣ HEADER : Identity + Month -->
-              <div class="modal-header d-flex justify-content-between">
+              <div class="modal-header d-flex justify-content-between p-0 mb-4 border-0">
                 <div class="labour-header">
-                  
-                  <img id="ls-avatar"
-                  class="rounded-circle border"
-                  style="width:100px;height:100px;object-fit:cover;"
-                  src="">
-
+                  <img id="ls-avatar" class="rounded-circle border" style="width:80px;height:80px;object-fit:cover;" src="">
                   <div>
-                    <div id="ls-name" class="labour-name"></div>
-                    <div class="labour-meta">
-                      🆔<span class="fw-semibold" id="ls-gate_pass_id"></span> <br> 📞<span class="fw-semibold" id="ls-phone"></span> <br>📍<span class="fw-semibold" id="ls-site"></span>
+                    <div id="ls-name" class="labour-name fs-4 fw-bold"></div>
+                    <div class="labour-meta mt-1">
+                      🆔 <span class="fw-semibold" id="ls-gate_pass_id">-</span> &nbsp;|&nbsp; 
+                      📞 <span class="fw-semibold" id="ls-phone">-</span> &nbsp;|&nbsp;
+                      📍 <span class="fw-semibold" id="ls-site">-</span>
                     </div>
                   </div>
                 </div>
-
-
                 <div>
-                
-                  <input type="month"
-                  id="month-selector"
-                  class="form-control form-control-sm"
-                  style="width:160px">
-
+                  <input type="month" id="month-selector" class="form-control form-control-sm shadow-sm fw-bold" style="width:150px;">
                 </div>
               </div>
 
-              <!-- 2️⃣ Attendance Summary -->
               <div class="card summary-card mb-3">
-                <div class="card-header fw-bold">
-                  Attendance Summary
-                </div>
+                <div class="card-header fw-bold small text-uppercase text-secondary">Attendance Summary</div>
                 <div class="card-body">
-                  <div>Total Morning Shifts: <b id="as-morning"></b></div>
-                  <div>Total Day Shifts: <b id="as-day"></b></div>
-                  <div>Total Night Shifts: <b id="as-night"></b></div>
-                  <div>Total Shifts: <b id="as-total"></b></div>
-                  <div class="text-danger">
-                    Absent Days: <b id="as-absent"></b>
-                  </div>
+                  <div class="d-flex justify-content-between mb-1"><span>Total Morning Shifts:</span> <b id="as-morning"></b></div>
+                  <div class="d-flex justify-content-between mb-1"><span>Total Day Shifts:</span> <b id="as-day"></b></div>
+                  <div class="d-flex justify-content-between mb-1"><span>Total Night Shifts:</span> <b id="as-night"></b></div>
+                  <div class="d-flex justify-content-between mb-1 pt-2 border-top"><span>Total Shifts:</span> <b id="as-total"></b></div>
+                  <div class="d-flex justify-content-between text-danger"><span>Absent Days:</span> <b id="as-absent"></b></div>
                 </div>
               </div>
 
-              <!-- 4️⃣ Earnings Summary -->
               <div class="card summary-card mb-3">
-                <div class="card-header fw-bold">
-                  Earnings
-                </div>
+                <div class="card-header fw-bold small text-uppercase text-secondary">Financials</div>
                 <div class="card-body">
-                  <div>Daily Wage: ₹<b id="ps-wage"></b></div>
-                  <div>Total Pay (as worked): ₹<b id="ps-earned"></b></div>
+                  <div class="d-flex justify-content-between mb-1"><span>Daily Wage:</span> <span>₹<b id="ps-wage"></b></span></div>
+                  <div class="d-flex justify-content-between text-success"><span>Total Earned:</span> <span>₹<b id="ps-earned"></b></span></div>
+                  <div class="d-flex justify-content-between text-danger"><span>Advance Paid:</span> <span>-₹<b id="ps-advance"></b></span></div>
+                  <div class="d-flex justify-content-between text-danger"><span>Mess / Expenses:</span> <span>-₹<b id="ps-expense"></b></span></div>
                 </div>
               </div>
 
-              <!-- 5️⃣ Deductions -->
-              <div class="card summary-card mb-3">
-                <div class="card-header fw-bold">
-                  Deductions
-                </div>
-                <div class="card-body">
-                  <div>Advance Paid: ₹<b id="ps-advance"></b></div>
-                  <div>Mess / Canteen: ₹<b id="ps-expense"></b></div>
-                </div>
+              <div class="net-pay p-3 rounded bg-success bg-opacity-10 text-center">
+                <h6 class="text-success mb-1 text-uppercase fw-bold small">Net Payable</h6>
+                <h2 class="fw-bold text-dark m-0">₹<span id="ps-net"></span></h2>
               </div>
-
-              <!-- 6️⃣ Net Payable -->
-              <div class="net-pay">
-                <div class="card-body text-center">
-                  <h5 class="text-success mb-1">Net Payable</h5>
-                  <h3 class="fw-bold">₹<span id="ps-net"></span></h3>
-                </div>
-              </div>
-
             </div>
 
-            <!-- RIGHT SIDE -->
             <div class="col-md-5">
-
-              <!-- 3️⃣ Calendar -->
-              <div class="card">
-                <div class="card-header fw-bold">
-                  Monthly Attendance
-                </div>
+              <div class="card shadow-sm border-0 mb-3 h-100">
+                <div class="card-header fw-bold bg-white border-bottom">Monthly Log</div>
                 <div class="card-body">
                   <div id="attendance-calendar"></div>
-
-                  <div class="mt-2 small">
-                    <span class="badge bg-success">Worked</span>
-                    <span class="badge bg-danger">Absent</span>
+                  <div class="mt-3 small d-flex gap-3 justify-content-center text-secondary">
+                    <span class="d-flex align-items-center gap-1"><span class="badge bg-success rounded-circle p-1"> </span> Worked</span>
+                    <span class="d-flex align-items-center gap-1"><span class="badge bg-danger rounded-circle p-1"> </span> Absent</span>
                   </div>
                 </div>
-              </div>
-
-               <!-- Labour Photo & Documents -->
-              <div class="card mb-3">
-                <div class="card-header fw-bold">
-                  Identity & Documents
-                </div>
-
-                <div class="card-body">
-
-                  <!-- Labour Photo -->
+                <!-- Labour Photo -->
                   <div class="text-center mb-3">
                     <img id="ls-photo"
                         src=""
@@ -319,65 +380,32 @@
                     <div class="small text-muted mt-1">Labour Photo</div>
                   </div>
 
-                  <!-- Aadhaar Documents -->
-                  <div class="mt-2 d-flex gap-2 flex-wrap">
-
-                    <a id="ls-aadhaar-front"
-                      href="#"
-                      target="_blank"
-                      class="btn btn-outline-primary btn-sm w-100">
-                      Aadhaar Front
-                    </a>
-
-                    <a id="ls-aadhaar-back"
-                      href="#"
-                      target="_blank"
-                      class="btn btn-outline-primary btn-sm w-100">
-                      Aadhaar Back
-                    </a>
-
-                 
-                    <a id="ls-gate-pass-front"
-                      class="btn btn-outline-primary btn-sm w-100"
-                      target="_blank">
-                      Gate Pass Front
-                    </a>
-
-                    <a id="ls-gate-pass-back"
-                      class="btn btn-outline-primary btn-sm w-100"
-                      target="_blank">
-                      Gate Pass Back
-                    </a>
-                  </div>
-
-
+                  <div class="card shadow-sm border-0 mt-3">
+                    <div class="card-header fw-bold bg-white border-bottom">Documents</div>
+                    <div class="card-body d-flex flex-wrap gap-2">
+                        <a id="ls-aadhaar-front" href="#" target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">Aadhaar Front</a>
+                        <a id="ls-aadhaar-back" href="#" target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">Aadhaar Front</a>
+                        <a id="ls-gate-pass-front" href="#" target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">Gate Pass Front</a>
+                        <a id="ls-gate-pass-back" href="#" target="_blank" class="btn btn-sm btn-outline-secondary flex-fill">Gate Pass Back</a>
+                        
+                    </div>
                 </div>
-              </div>
 
+              </div>
             </div>
 
           </div>
         </div>
 
-        <!-- FOOTER -->
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">
-            Close
-          </button>
+        <div class="modal-footer bg-light border-0">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
 
       </div>
     </div>
-  </div>
-
-
 </div>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/labour-summary.css') }}">
-
 <script src="{{ url_for('static', filename='js/labours.js') }}"></script>
 
-
 {% endblock %}
-
-
