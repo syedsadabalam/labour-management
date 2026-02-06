@@ -83,6 +83,14 @@ def admin_edit_site(site_id):
             location=request.form.get('location'),
             manager_id=request.form.get('manager_id')
         )
+
+         # 🔑 SAVE SHIFT RULES (THIS WAS MISSING)
+        site.allow_morning_shift = 1 if "allow_morning_shift" in request.form else 0
+        site.allow_day_shift     = 1 if "allow_day_shift" in request.form else 0
+        site.allow_night_shift   = 1 if "allow_night_shift" in request.form else 0
+
+        db.session.commit()
+        
         flash('Site updated successfully', 'success')
         return redirect(url_for('admin_bp.admin_sites'))
 

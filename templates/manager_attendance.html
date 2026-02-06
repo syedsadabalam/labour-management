@@ -246,21 +246,29 @@
                                 </td>
 
                                 <td>
-                                    <select name="labour_{{ labour.id }}_morning" class="status-select" onchange="updateColor(this); updateCounts();">
+                                    <select name="labour_{{ labour.id }}_morning"
+                                        class="status-select {% if not site_shift_rules.morning %}locked{% endif %}"
+                                        {% if not site_shift_rules.morning %}disabled{% endif %}
+                                        onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.morning_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.morning_shift_flag == 1 %}selected{% endif %}>Present</option>
                                     </select>
                                 </td>
 
                                 <td>
-                                    <select name="labour_{{ labour.id }}_day" class="status-select" onchange="updateColor(this); updateCounts();">
+                                    <select name="labour_{{ labour.id }}_day"
+                                        class="status-select {% if not site_shift_rules.day %}locked{% endif %}"
+                                        {% if not site_shift_rules.day %}disabled{% endif %} onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.day_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.day_shift_flag == 1 %}selected{% endif %}>Present</option>
                                     </select>
                                 </td>
 
                                 <td>
-                                    <select name="labour_{{ labour.id }}_night" class="status-select" onchange="updateColor(this); updateCounts();">
+                                    <select name="labour_{{ labour.id }}_night"
+                                        class="status-select {% if not site_shift_rules.night %}locked{% endif %}"
+                                        {% if not site_shift_rules.night %}disabled{% endif %}
+                                        onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.night_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.night_shift_flag == 1 %}selected{% endif %}>Present</option>
                                     </select>

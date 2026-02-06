@@ -1,8 +1,8 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from datetime import date, datetime
 from extensions import db
-from models import Attendance, Labour
+from models import Attendance, Labour, Site
 from . import manager_bp
 import json
 from services.audit_service import log_audit
@@ -14,6 +14,11 @@ from sqlalchemy import func, or_, case
 @manager_bp.route('/attendance', methods=['GET'])
 @login_required
 def manager_attendance():
+
+    if not current_user.site_id:
+        flash("You are not assigned to any site. Contact admin.", "danger")
+        return redirect(url_for("manager_bp.manager_dashboard"))
+
     selected_date_str = request.args.get('date')
     selected_date = (
         datetime.strptime(selected_date_str, "%Y-%m-%d").date()
@@ -27,31 +32,48 @@ def manager_attendance():
 
     labours = (
         Labour.query
-        .filter_by(site_id=current_user.site_id, is_active=True)
+        .filter(
+            Labour.company_id == current_user.company_id,
+            Labour.site_id == current_user.site_id,
+            Labour.is_active == True
+        )
         .order_by(Labour.name)
         .all()
     )
 
+
     attendance_map = {
         a.labour_id: a
         for a in Attendance.query.filter_by(
+            company_id=current_user.company_id,
             site_id=current_user.site_id,
             date=selected_date
         ).all()
     }
+
+    site = Site.query.get(current_user.site_id)
 
     return render_template(
         "manager_attendance.html",
         labours=labours,
         attendance_map=attendance_map,
         selected_date=selected_date,
-        date=date
+        date=date,
+        site_shift_rules={
+        "morning": site.allow_morning_shift,
+        "day": site.allow_day_shift,
+        "night": site.allow_night_shift,
+        }
     )
 
 
 @manager_bp.route('/attendance/mark', methods=['POST'])
 @login_required
 def manager_mark_attendance():
+
+    if not current_user.site_id:
+        abort(403)
+
     selected_date = datetime.strptime(
         request.form['attendance_date'], "%Y-%m-%d"
     ).date()
@@ -60,6 +82,15 @@ def manager_mark_attendance():
         flash("Future attendance is not allowed", "danger")
         return redirect(url_for('manager_bp.manager_attendance'))
 
+    # ---- FETCH SITE SHIFT RULES ----
+    site = Site.query.get(current_user.site_id)
+
+    allow_morning = bool(site.allow_morning_shift)
+    allow_day = bool(site.allow_day_shift)
+    allow_night = bool(site.allow_night_shift)
+
+
+
     changes = []  # 🔑 collect audit diffs here
 
     for key, value in request.form.items():
@@ -67,7 +98,28 @@ def manager_mark_attendance():
             continue
 
         _, labour_id, shift = key.split("_")
+        # ---- BLOCK DISALLOWED SHIFTS (SITE LEVEL) ----
+        if shift == "morning" and not allow_morning:
+            continue
+
+        if shift == "day" and not allow_day:
+            continue
+
+        if shift == "night" and not allow_night:
+            continue
+
+
         labour_id = int(labour_id)
+
+        labour = Labour.query.filter_by(
+            id=labour_id,
+            company_id=current_user.company_id,
+            site_id=current_user.site_id,
+            is_active=True
+        ).first()
+
+        if not labour:
+            continue
 
         record = Attendance.query.filter_by(
             labour_id=labour_id,
@@ -126,6 +178,24 @@ def manager_mark_attendance():
                 }
             })
 
+    # ---- FORCE DISABLED SHIFTS TO ZERO (SAFETY NET) ----
+    if not allow_morning:
+        Attendance.query.filter_by(
+            site_id=current_user.site_id,
+            date=selected_date
+        ).update({Attendance.morning_shift_flag: 0})
+
+    if not allow_day:
+        Attendance.query.filter_by(
+            site_id=current_user.site_id,
+            date=selected_date
+        ).update({Attendance.day_shift_flag: 0})
+
+    if not allow_night:
+        Attendance.query.filter_by(
+            site_id=current_user.site_id,
+            date=selected_date
+        ).update({Attendance.night_shift_flag: 0})
 
     db.session.commit()
 
@@ -184,10 +254,12 @@ def manager_monthly_attendance():
     end_date = date(year, month, monthrange(year, month)[1])
 
     # 👷 Total active labours
-    total_labours = Labour.query.filter_by(
-        site_id=current_user.site_id,
-        is_active=True
+    total_labours = Labour.query.filter(
+        Labour.company_id == current_user.company_id,
+        Labour.site_id == current_user.site_id,
+        Labour.is_active == True
     ).count()
+
 
     # 📊 Attendance aggregation
     rows = (
@@ -218,10 +290,12 @@ def manager_monthly_attendance():
         )
 
         .filter(
+            Attendance.company_id == current_user.company_id,
             Attendance.site_id == current_user.site_id,
             Attendance.date >= start_date,
             Attendance.date <= end_date
         )
+
         .group_by(Attendance.date)
         .order_by(Attendance.date)
         .all()

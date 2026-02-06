@@ -104,6 +104,11 @@ class Site(db.Model):
     payments = db.relationship('Payment', back_populates='site', lazy='select')
     users = db.relationship('User', back_populates='site', lazy='select')
 
+    allow_morning_shift = db.Column(db.Boolean, default=True)
+    allow_day_shift     = db.Column(db.Boolean, default=True)
+    allow_night_shift   = db.Column(db.Boolean, default=True)
+
+
     def __repr__(self):
         return f"<Site {self.id} {self.site_name}>"
 
@@ -173,6 +178,7 @@ class Payment(db.Model):
 
     labour = db.relationship('Labour', back_populates='payments', lazy='joined')
     site = db.relationship('Site', back_populates='payments', lazy='joined')
+    company = db.relationship('Company')
 
 
     def __repr__(self):
@@ -203,6 +209,7 @@ class Attendance(db.Model):
 
     labour = db.relationship('Labour', back_populates='attendances')
     site = db.relationship('Site')
+    company = db.relationship('Company')
 
     __table_args__ = (
         UniqueConstraint('labour_id', 'date', name='uniq_labour_date'),
@@ -231,6 +238,9 @@ class LabourMonthlyExpenses(db.Model):
     updated_at = db.Column(db.DateTime, nullable=True)
 
     labour = db.relationship('Labour', back_populates='monthly_expenses', lazy='joined')
+    company = db.relationship('Company')
+    site = db.relationship('Site')
+
 
     def __repr__(self):
         return f"<LabourMonthlyExpenses {self.id} labour={self.labour_id} month={self.month}>"
@@ -238,7 +248,7 @@ class LabourMonthlyExpenses(db.Model):
 class AuditLog(db.Model):
     __tablename__ = 'audit_log'
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
     user_id = db.Column(db.Integer, nullable=True)
     username = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), nullable=True)
@@ -259,7 +269,7 @@ class AuditLogArchive(db.Model):
     __tablename__ = 'audit_log_archive'
 
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
     user_id = db.Column(db.Integer, nullable=True)
     username = db.Column(db.String(100), nullable=True)
     role = db.Column(db.String(50), nullable=True)

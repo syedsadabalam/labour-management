@@ -28,7 +28,7 @@
         <i class="fa-solid fa-layer-group"></i>
       </div>
       <div class="brand-info">
-        <h6 class="brand-name">LMS Enterprise</h6>
+        <h6 class="brand-name">Apna Labour</h6>
         <span class="brand-role">Manager Panel</span>
       </div>
     </div>
@@ -96,7 +96,7 @@
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
         <div class="text-center mt-3 text-secondary" style="font-size: 10px;">
-            LMS v2.0 • {{ current_year }}
+            LMS v2.0 • 2026
         </div>
     </div>
   </aside>
@@ -105,7 +105,7 @@
     
     <header class="app-header">
       <div class="header-left">
-         <h5 class="page-title mb-0">{% block page_title %}Dashboard{% endblock %}</h5>
+         <h5 class="page-title mb-0">{% block page_title %}ApnaLabor™ Workforce Management System{% endblock %}</h5>
       </div>
       
       <div class="header-right">
@@ -114,15 +114,20 @@
             <span class="value">{{ current_user.site.site_name if current_user.site else 'All Sites' }}</span>
         </div>
 
-        <div class="user-profile">
+          <div class="user-profile">
             <div class="avatar">
                 {{ current_user.username[:1] | upper if current_user.is_authenticated else 'G' }}
             </div>
             <div class="info">
                 <div class="name">{{ current_user.username if current_user.is_authenticated else 'Guest' }}</div>
-                <div class="role">{{ current_user.role | capitalize }}</div>
+                <div class="role">
+                    {{ current_user.role | capitalize }} 
+                    {% if current_user.is_authenticated %}
+                        • <a href="{{ url_for('auth.logout') }}" style="color: #ff4d4d; text-decoration: none; font-weight: bold;">Logout</a>
+                    {% endif %}
+                </div>
             </div>
-        </div>
+          </div>
       </div>
     </header>
 

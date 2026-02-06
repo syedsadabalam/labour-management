@@ -113,6 +113,49 @@
     }
     .btn-cancel:hover { background-color: #f1f5f9; color: var(--text-primary); }
 
+    .shift-toggle-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        cursor: pointer; /* Makes the whole card feel clickable */
+    }
+
+    /* Hover Effect */
+    .shift-toggle-card:hover {
+        border-color: #cbd5e1;
+        background-color: #f8fafc;
+        transform: translateY(-1px);
+    }
+
+    /* Icon Styling */
+    .shift-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .icon-morning { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; } /* Orange */
+    .icon-day     { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; } /* Blue */
+    .icon-night   { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; } /* Purple */
+
+    /* Custom Switch Size */
+    .form-switch .form-check-input {
+        width: 2.5em;
+        height: 1.25em;
+        cursor: pointer;
+    }
+
 </style>
 
 <div class="admin-nav sticky-top">
@@ -185,6 +228,74 @@
                         <i class="fa-solid fa-circle-info me-1"></i> Assigning a manager gives them full access to this site's attendance and payroll.
                     </div>
                 </div>
+                <div class="mb-4">
+                <label class="form-label small fw-bold text-secondary text-uppercase mb-3">
+                    Shift Configuration
+                </label>
+                
+                <div class="row g-3">
+                    
+                    <div class="col-12 col-md-4">
+                        <label class="shift-toggle-card" for="checkMorning">
+                            <div class="d-flex align-items-center">
+                                <div class="shift-icon icon-morning">
+                                    <i class="fa-regular fa-sun"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Morning</div>
+                                    <div class="small text-secondary" style="font-size: 0.75rem;">Early batch</div>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="checkMorning" 
+                                    name="allow_morning_shift" 
+                                    {% if site.allow_morning_shift %}checked{% endif %}>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label class="shift-toggle-card" for="checkDay">
+                            <div class="d-flex align-items-center">
+                                <div class="shift-icon icon-day">
+                                    <i class="fa-solid fa-cloud-sun"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Day</div>
+                                    <div class="small text-secondary" style="font-size: 0.75rem;">Standard hours</div>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="checkDay" 
+                                    name="allow_day_shift" 
+                                    {% if site.allow_day_shift %}checked{% endif %}>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label class="shift-toggle-card" for="checkNight">
+                            <div class="d-flex align-items-center">
+                                <div class="shift-icon icon-night">
+                                    <i class="fa-solid fa-moon"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Night</div>
+                                    <div class="small text-secondary" style="font-size: 0.75rem;">Overnight work</div>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="checkNight" 
+                                    name="allow_night_shift" 
+                                    {% if site.allow_night_shift %}checked{% endif %}>
+                            </div>
+                        </label>
+                    </div>
+
+                </div>
+            </div>
+
+
 
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn-primary-custom">

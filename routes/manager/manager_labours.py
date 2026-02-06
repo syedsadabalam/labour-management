@@ -22,11 +22,17 @@ from routes.admin.utils import save_and_compress_image
 @login_required
 def manager_labours():
 
+    # 🔒 HARD GUARD — manager must have a site
+    if not current_user.site_id:
+        flash("You are not assigned to any site. Contact admin.", "danger")
+        return redirect(url_for("manager_bp.manager_dashboard"))
+
     search = request.args.get('search', '').strip()
 
-    query = Labour.query.filter_by(
-        company_id=current_user.company_id,
-        site_id=current_user.site_id
+    query = Labour.query.filter(
+        Labour.company_id == current_user.company_id,
+        Labour.site_id == current_user.site_id,
+        Labour.is_active == True
     )
 
     if search:
