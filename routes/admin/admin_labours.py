@@ -409,9 +409,13 @@ def labour_monthly_summary(labour_id):
     })
 
 
-from flask import send_from_directory
+
+from flask import send_from_directory, current_app
+import os
 
 @admin_bp.route('/uploads/<path:filename>')
 @login_required
 def uploaded_file(filename):
-    return send_from_directory('uploads', filename)
+    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads')
+    return send_from_directory(upload_dir, filename)
+
