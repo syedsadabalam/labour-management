@@ -21,7 +21,8 @@ def super_admin_companies():
     companies = Company.query.order_by(Company.created_at.desc()).all()
     return render_template(
         'super_admin_companies.html',
-        companies=companies
+        companies=companies,
+        now_date=date.today()
     )
 
 
@@ -78,3 +79,36 @@ def super_admin_create_company():
         'super_admin_create_company.html',
         plans=plans
     )
+
+
+@admin_bp.route('/super-admin/companies/<int:company_id>/renew-plan', methods=['POST'])
+@login_required
+def renew_company_plan(company_id):
+    if not super_admin_required():
+        abort(403)
+
+    company = Company.query.get_or_404(company_id)
+    renewal_months = request.form.get('renewal_months', type=int)
+
+    if not renewal_months or renewal_months <= 0:
+        flash('Enter valid number of months', 'danger')
+        return redirect(url_for('admin_bp.super_admin_companies'))
+
+    try:
+        # If plan is already expired, start from today. Otherwise, extend from expiry date
+        if company.plan_expires_at and company.plan_expires_at >= date.today():
+            new_expiry = company.plan_expires_at + timedelta(days=30 * renewal_months)
+        else:
+            new_expiry = date.today() + timedelta(days=30 * renewal_months)
+
+        company.plan_expires_at = new_expiry
+        company.is_active = True  # Re-activate if it was deactivated
+        db.session.commit()
+
+        flash(f'✅ Plan renewed successfully! New expiry: {new_expiry}', 'success')
+        return redirect(url_for('admin_bp.super_admin_companies'))
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error renewing plan: {str(e)}', 'danger')
+        return redirect(url_for('admin_bp.super_admin_companies'))

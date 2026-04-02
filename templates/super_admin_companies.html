@@ -104,6 +104,133 @@
         .muted {
             color: #6b7280;
         }
+
+        .btn-renew {
+            background: #10b981;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-renew:hover {
+            background: #059669;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 32px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn-submit {
+            flex: 1;
+            background: #2563eb;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: #e5e7eb;
+            color: #374151;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancel:hover {
+            background: #d1d5db;
+        }
+
+        .expiry-warning {
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .expiry-ok {
+            color: #166534;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -140,6 +267,7 @@
                     <th>Plan</th>
                     <th>Plan Expiry</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -149,7 +277,13 @@
                     <td><strong>{{ c.company_name }}</strong></td>
                     <td>{{ c.plan.name if c.plan else '-' }}</td>
                     <td class="muted">
-                        {{ c.plan_expires_at if c.plan_expires_at else '—' }}
+                        {% if c.plan_expires_at %}
+                            <span class="{% if c.plan_expires_at < now_date %}expiry-warning{% else %}expiry-ok{% endif %}">
+                                {{ c.plan_expires_at }}
+                            </span>
+                        {% else %}
+                            —
+                        {% endif %}
                     </td>
                     <td>
                         {% if c.is_active %}
@@ -158,6 +292,11 @@
                             <span class="status-inactive">Inactive</span>
                         {% endif %}
                     </td>
+                    <td>
+                        <button class="btn-renew" onclick="openRenewModal({{ c.id }}, '{{ c.company_name }}', '{{ c.plan_expires_at }}')">
+                            🔄 Renew
+                        </button>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -165,6 +304,112 @@
     </div>
 
 </div>
+
+<!-- ========== RENEWAL MODAL ========== -->
+<div id="renewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">🔄 Renew Plan</div>
+
+        <form id="renewForm" method="POST">
+            <div class="form-group">
+                <label>Company:</label>
+                <input type="text" id="companyNameDisplay" readonly style="background: #f3f4f6; cursor: not-allowed;">
+            </div>
+
+            <div class="form-group">
+                <label>Current Expiry Date:</label>
+                <input type="text" id="currentExpiryDisplay" readonly style="background: #f3f4f6; cursor: not-allowed;">
+            </div>
+
+            <div class="form-group">
+                <label for="renewal_months">Renewal Period (months):</label>
+                <select id="renewal_months" name="renewal_months" required>
+                    <option value="">-- Select months --</option>
+                    <option value="1">1 month</option>
+                    <option value="3">3 months</option>
+                    <option value="6">6 months</option>
+                    <option value="12">12 months (1 year)</option>
+                    <option value="24">24 months (2 years)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>New Expiry Date:</label>
+                <input type="text" id="newExpiryDisplay" readonly style="background: #f3f4f6; cursor: not-allowed; color: #059669; font-weight: 600;">
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn-submit">✅ Confirm Renewal</button>
+                <button type="button" class="btn-cancel" onclick="closeRenewModal()">✕ Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRenewModal(companyId, companyName, expiryDate) {
+    const modal = document.getElementById('renewModal');
+    const form = document.getElementById('renewForm');
+    
+    // Populate form fields
+    document.getElementById('companyNameDisplay').value = companyName;
+    document.getElementById('currentExpiryDisplay').value = expiryDate || 'No expiry set';
+    document.getElementById('renewal_months').value = '';
+    document.getElementById('newExpiryDisplay').value = '';
+
+    // Update form action
+    form.action = `/admin/super-admin/companies/${companyId}/renew-plan`;
+
+    // Show modal
+    modal.classList.add('active');
+
+    // Calculate new expiry when months change
+    document.getElementById('renewal_months').addEventListener('change', function() {
+        if (this.value) {
+            calculateNewExpiry(expiryDate);
+        }
+    });
+}
+
+function calculateNewExpiry(currentExpiry) {
+    const months = parseInt(document.getElementById('renewal_months').value);
+    if (!months) return;
+
+    // Parse current expiry date (format: YYYY-MM-DD)
+    let baseDate = new Date();
+    if (currentExpiry) {
+        const parts = currentExpiry.split('-');
+        baseDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        
+        // If already expired, use today's date
+        if (baseDate < new Date()) {
+            baseDate = new Date();
+        }
+    }
+
+    // Add months
+    baseDate.setMonth(baseDate.getMonth() + months);
+
+    // Format as YYYY-MM-DD
+    const year = baseDate.getFullYear();
+    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const day = String(baseDate.getDate()).padStart(2, '0');
+
+    document.getElementById('newExpiryDisplay').value = `${year}-${month}-${day}`;
+}
+
+function closeRenewModal() {
+    const modal = document.getElementById('renewModal');
+    modal.classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.getElementById('renewModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeRenewModal();
+    }
+});
+</script>
 
 </body>
 </html>
