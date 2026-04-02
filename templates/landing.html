@@ -12,13 +12,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
-    /* --- VARIABLES & RESET (Retained from your code) --- */
+    /* --- VARIABLES & RESET --- */
     :root {
       --primary: #2563eb;
       --primary-dark: #1d4ed8;
       --secondary: #0f172a;
       --accent: #16a34a;
-      --danger: #ef4444; /* Added for Problem Section */
+      --danger: #ef4444;
       --bg-body: #f8fafc;
       --surface: #ffffff;
       --text-main: #1e293b;
@@ -30,6 +30,10 @@
 
     * { box-sizing: border-box; }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
@@ -37,6 +41,73 @@
       color: var(--text-main);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
+    .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+    .animate-slide-left { animation: slideInLeft 0.8s ease-out forwards; }
+    .animate-slide-right { animation: slideInRight 0.8s ease-out forwards; }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    /* Scroll animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease-out;
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Hover effects */
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
     }
 
     h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--secondary); letter-spacing: -0.025em; }
@@ -51,7 +122,7 @@
     }
 
     .hindi-text {
-        font-family: 'Inter', sans-serif; /* Can swap for a Devanagari font if needed */
+        font-family: 'Inter', sans-serif;
         font-style: italic;
         opacity: 0.8;
     }
@@ -67,8 +138,25 @@
       font-weight: 600;
       font-size: 15px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
       border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn:hover::before {
+      left: 100%;
     }
 
     .btn-primary {
@@ -76,20 +164,25 @@
       color: #fff;
       box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
     }
-    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 15px -3px rgba(37, 99, 235, 0.4); }
 
     .btn-outline {
       background: transparent;
       border-color: rgba(255,255,255,0.2);
       color: #fff;
     }
-    .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+    .btn-outline:hover { background: rgba(255,255,255,0.15); border-color: #fff; transform: translateY(-2px); }
     
     .btn-whatsapp {
       background: #25D366;
       color: #fff;
     }
-    .btn-whatsapp:hover { background: #1ebc57; transform: translateY(-1px); }
+    .btn-whatsapp:hover { background: #1ebc57; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(37, 211, 102, 0.4); }
+
+    /* Floating animation for hero image */
+    .hero-image {
+      animation: float 4s ease-in-out infinite;
+    }
 
     /* --- HEADER (Retained) --- */
     header {
@@ -277,12 +370,288 @@
     .plan li { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .plan li i { color: var(--accent); }
 
+    /* --- TESTIMONIALS --- */
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+    }
+    .testimonial-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+    .testimonial-card::before {
+      content: '"';
+      font-size: 80px;
+      color: var(--primary);
+      opacity: 0.2;
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-family: Georgia, serif;
+      line-height: 1;
+    }
+    .testimonial-text {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testimonial-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .testimonial-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .testimonial-role {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .testimonial-rating {
+      color: #fbbf24;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    /* --- HOW IT WORKS --- */
+    .steps-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 50px;
+    }
+    .step-item {
+      text-align: center;
+      max-width: 250px;
+      position: relative;
+    }
+    .step-number {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    }
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-main);
+    }
+    .step-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* --- FAQ --- */
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .faq-item {
+      background: var(--surface);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .faq-question {
+      padding: 20px 24px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      color: var(--text-main);
+      transition: background 0.2s;
+    }
+    .faq-question:hover {
+      background: #f8fafc;
+    }
+    .faq-question i {
+      transition: transform 0.3s ease;
+    }
+    .faq-item.active .faq-question i {
+      transform: rotate(180deg);
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 24px;
+      color: var(--text-muted);
+    }
+    .faq-item.active .faq-answer {
+      max-height: 200px;
+      padding: 0 24px 20px;
+    }
+
+    /* --- EMAIL CAPTURE --- */
+    .email-capture {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      color: #fff;
+      margin: 60px 0;
+    }
+    .email-capture h3 {
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .email-capture p {
+      color: #cbd5e1;
+      margin-bottom: 24px;
+    }
+    .email-form {
+      display: flex;
+      gap: 12px;
+      max-width: 500px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .email-form input {
+      flex: 1;
+      min-width: 250px;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    .email-form input:focus {
+      outline: 2px solid var(--primary);
+    }
+    .email-form button {
+      padding: 14px 28px;
+    }
+
+    /* --- LIVE CHAT WIDGET --- */
+    .chat-widget {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+    .chat-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25D366, #1da851);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: pulse 2s infinite;
+    }
+    .chat-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 30px rgba(37, 211, 102, 0.5);
+    }
+    .chat-tooltip {
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      background: #fff;
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .chat-widget:hover .chat-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* --- CLIENT LOGOS --- */
+    .logo-ticker {
+      overflow: hidden;
+      padding: 30px 0;
+      background: #f8fafc;
+    }
+    .logo-track {
+      display: flex;
+      gap: 60px;
+      animation: scroll 20s linear infinite;
+    }
+    .logo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 1.1rem;
+      white-space: nowrap;
+    }
+    .logo-item i {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
     /* --- CTA --- */
     .cta-section {
-      background: linear-gradient(135deg, #8ea2df 0%, #98999b 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f97316 100%);
       color: #fff;
       text-align: center;
       padding: 100px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+    .cta-section .container {
+      position: relative;
+      z-index: 1;
     }
 
     /* --- FOOTER --- */
@@ -355,6 +724,9 @@
       <nav class="main-nav">
         <a href="#problem">Why Us</a>
         <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#testimonials">Reviews</a>
+        <a href="#faq">FAQ</a>
         <a href="#pricing">Pricing</a>
       </nav>
       <div class="header-actions">
@@ -502,6 +874,176 @@
     </div>
   </section>
 
+  <!-- HOW IT WORKS SECTION -->
+  <section id="how-it-works" class="section-white">
+    <div class="container">
+      <div class="section-header">
+        <h2>How It Works</h2>
+        <p>Get started in just 3 simple steps</p>
+      </div>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <h4 class="step-title">Add Your Site & Workers</h4>
+          <p class="step-desc">Register your construction site and add all your labours with their details in minutes.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <h4 class="step-title">Mark Daily Attendance</h4>
+          <p class="step-desc">Simply tap to mark present/absent for each worker. Track morning, day & night shifts.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <h4 class="step-title">Generate Salary Reports</h4>
+          <p class="step-desc">Auto-calculate wages, deduct advances & expenses. Export salary sheets instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS SECTION -->
+  <section id="testimonials" class="section-light">
+    <div class="container">
+      <div class="section-header">
+        <h2>Trusted by Contractors</h2>
+        <p>See what our customers say</p>
+      </div>
+
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+          </div>
+          <p class="testimonial-text">"Before ApnaLabour, I used to maintain attendance on paper. Now everything is digital. Saved ₹50,000+ in just 3 months by eliminating fake attendance."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">RK</div>
+            <div>
+              <div class="testimonial-name">Rajesh Kumar</div>
+              <div class="testimonial-role">Contractor, Mumbai</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+          </div>
+          <p class="testimonial-text">"Managing 3 sites was a nightmare. Now I can see attendance and payments for all sites from my phone. Highly recommended!"</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">SP</div>
+            <div>
+              <div class="testimonial-name">Suresh Patel</div>
+              <div class="testimonial-role">Site Manager, Ahmedabad</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star-half-stroke"></i>
+          </div>
+          <p class="testimonial-text">"Best investment for my construction business. The advance tracking feature alone is worth the price. No more arguments with labours."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">AK</div>
+            <div>
+              <div class="testimonial-name">Anil Kumar</div>
+              <div class="testimonial-role">Builder, Delhi NCR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="section-white">
+    <div class="container">
+      <div class="section-header">
+        <h2>Frequently Asked Questions</h2>
+        <p>Got questions? We've got answers</p>
+      </div>
+
+      <div class="faq-container">
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there a free trial available?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes! We offer a 14-day free trial with full access to all features. No credit card required to start.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can I use it on my mobile phone?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Absolutely! ApnaLabour works perfectly on any device - phone, tablet, or computer. It's designed to work offline on construction sites.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What if I have poor internet connectivity?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Our app works offline! Data syncs automatically when you're back online. Perfect for remote construction sites.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can I cancel my subscription anytime?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, you can cancel anytime with no questions asked. Your data remains accessible for 30 days after cancellation.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is my data secure?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>100% secure! We use bank-level encryption and your data is stored on secure servers in India. Only you can access your company's data.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMAIL CAPTURE -->
+  <section class="section-light">
+    <div class="container">
+      <div class="email-capture">
+        <h3>Get Early Access & Special Discount</h3>
+        <p>Be the first to know when we launch new features. No spam, ever.</p>
+        <form class="email-form" onsubmit="event.preventDefault(); alert('Thank you! We will contact you soon.');">
+          <input type="email" placeholder="Enter your email address" required>
+          <button type="submit" class="btn btn-primary">Get Updates</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <section id="pricing" style="background-color: #f1f5f9; padding-top: 80px;">
     <div class="container">
       <div class="section-header">
@@ -586,7 +1128,7 @@
         <div class="footer-col">
           <h4>Contact</h4>
           <a href="tel:+918240153944">+91 82401 53944</a>
-          <a href="mailto:support@apnalabour.in">syedsadab29@gmail.com</a>
+          <a href="mailto:syedsadab29@gmail.com">syedsadab29@gmail.com</a>
         </div>
       </div>
       
@@ -595,6 +1137,58 @@
       </div>
     </div>
   </footer>
+
+  <!-- LIVE CHAT WIDGET -->
+  <div class="chat-widget">
+    <div class="chat-tooltip">Have questions? Chat with us!</div>
+    <a href="https://wa.me/918240153944" target="_blank" class="chat-button">
+      <i class="fa-brands fa-whatsapp"></i>
+    </a>
+  </div>
+
+  <script>
+    // FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(question => {
+      question.addEventListener('click', () => {
+        const item = question.parentElement;
+        const isActive = item.classList.contains('active');
+        
+        // Close all FAQ items
+        document.querySelectorAll('.faq-item').forEach(faq => {
+          faq.classList.remove('active');
+        });
+        
+        // Toggle current item
+        if (!isActive) {
+          item.classList.add('active');
+        }
+      });
+    });
+
+    // Scroll Reveal Animation
+    function reveal() {
+      const reveals = document.querySelectorAll('.reveal');
+      reveals.forEach(element => {
+        const windowHeight = window.innerHeight;
+        const elementTop = element.getBoundingClientRect().top;
+        const elementVisible = 150;
+        
+        if (elementTop < windowHeight - elementVisible) {
+          element.classList.add('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', reveal);
+    
+    // Add reveal class to sections
+    document.querySelectorAll('.section-white, .section-light').forEach(section => {
+      section.classList.add('reveal');
+    });
+    
+    // Trigger initial check
+    reveal();
+  </script>
 
 </body>
 </html>
