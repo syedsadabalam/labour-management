@@ -58,9 +58,14 @@ def admin_edit_manager(manager_id):
     ).all()
 
     if request.method == 'POST':
+        from werkzeug.security import generate_password_hash
         manager.username = request.form.get('username')
         site_id = request.form.get('site_id')
         manager.site_id = int(site_id) if site_id else None
+
+        new_password = request.form.get('password', '').strip()
+        if new_password:
+            manager.password = generate_password_hash(new_password)
 
         db.session.commit()
         flash('Manager updated successfully', 'success')
