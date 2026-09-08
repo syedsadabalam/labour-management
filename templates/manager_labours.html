@@ -143,10 +143,10 @@
                     <tr>
                         <th width="5%">#</th>
                         <th width="35%">Labour Profile</th>
-                        <th width="15%">Bank Account</th>
+                        <th width="15%" class="d-none d-md-table-cell">Bank Account</th>
                         <th width="15%">Site</th>
-                        <th width="10%">Wage</th>
-                        <th width="10%">Status</th>
+                        <th width="10%" class="d-none d-md-table-cell">Wage</th>
+                        <th width="10%" class="d-none d-md-table-cell">Status</th>
                         <th width="10%" class="text-end pe-4">Action</th>
                     </tr>
                 </thead>
@@ -177,7 +177,7 @@
                             </div>
                         </td>
 
-                        <td class="small text-secondary">
+                        <td class="small text-secondary d-none d-md-table-cell">
                             {% if labour.bank_account %}
                                 <div class="text-dark font-monospace">{{ labour.bank_account }}</div>
                                 <div class="text-muted" style="font-size: 0.75rem;">{{ labour.ifsc_code }}</div>
@@ -193,9 +193,9 @@
                             </div>
                         </td>
 
-                        <td class="fw-bold text-dark">₹{{ labour.daily_wage }}</td>
+                        <td class="fw-bold text-dark d-none d-md-table-cell">₹{{ labour.daily_wage }}</td>
 
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             {% if labour.is_active %}
                                 <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Active</span>
                             {% else %}

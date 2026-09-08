@@ -257,6 +257,41 @@ def get_admin_dashboard_data(company_id):
             })
 
 
+    # =====================================================
+    # 7-DAY TREND DATA
+    # =====================================================
+    from datetime import timedelta
+    
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    
+    trend_rows = (
+        db.session.query(
+            Attendance.date,
+            func.count(func.distinct(Attendance.labour_id)).label("present")
+        )
+        .join(Labour, Labour.id == Attendance.labour_id)
+        .join(Site, Site.id == Attendance.site_id)
+        .filter(
+            Labour.company_id == company_id,
+            Labour.is_active == True,
+            Site.is_active == True,
+            Attendance.date >= last_7_days[0],
+            or_(
+                Attendance.morning_shift_flag == True,
+                Attendance.day_shift_flag == True,
+                Attendance.night_shift_flag == True
+            )
+        )
+        .group_by(Attendance.date)
+        .all()
+    )
+
+    trend_map = {r.date: r.present for r in trend_rows}
+
+    trend_labels = [d.strftime("%b %d") for d in last_7_days]
+    trend_values = [trend_map.get(d, 0) for d in last_7_days]
+
+
     return {
         "system_status": {
             "attendance_percent": round(system_attendance_percent, 1),
@@ -279,7 +314,11 @@ def get_admin_dashboard_data(company_id):
             ) if total_payroll_mtd else 0
         },
 
-       
+        "trend_data": {
+            "labels": trend_labels,
+            "values": trend_values
+        },
+
         "attendance_exceptions": attendance_exceptions,
         "sites": site_cards
     }

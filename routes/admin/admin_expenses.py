@@ -56,9 +56,20 @@ def save_monthly_expense():
     mess = float(data.get('mess', 0))
     canteen = float(data.get('canteen', 0))
 
+    # Ensure site belongs to company
+    site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+    if not site:
+        return jsonify({'status': 'error', 'message': 'Invalid site'}), 400
+        
+    # Ensure labour belongs to company
+    labour = Labour.query.filter_by(id=labour_id, company_id=current_user.company_id).first()
+    if not labour:
+        return jsonify({'status': 'error', 'message': 'Invalid labour'}), 400
+
     expense = LabourMonthlyExpenses.query.filter_by(
         labour_id=labour_id,
         site_id=site_id,
+        company_id=current_user.company_id,
         month=month
     ).first()
 
@@ -70,6 +81,7 @@ def save_monthly_expense():
         expense = LabourMonthlyExpenses(
             labour_id=labour_id,
             site_id=site_id,
+            company_id=current_user.company_id,
             month=month,
             mess_amount=mess,
             canteen_amount=canteen,

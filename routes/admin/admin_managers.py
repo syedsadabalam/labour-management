@@ -27,6 +27,13 @@ def admin_add_manager():
         from werkzeug.security import generate_password_hash
         pwd = generate_password_hash(request.form.get('password') or 'manager123')
         site_id = _to_int(request.form.get('site_id'))
+        
+        if site_id:
+            site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+            if not site:
+                flash("Invalid site selected.", "danger")
+                return redirect(url_for('admin_bp.admin_add_manager'))
+
         m = User(
             username=username,
             password=pwd,
@@ -35,9 +42,17 @@ def admin_add_manager():
             company_id=current_user.company_id
         )
 
-        db.session.add(m); db.session.commit()
-        flash('Manager added', 'success')
-        return redirect(url_for('admin_bp.admin_managers'))
+        from sqlalchemy.exc import IntegrityError
+        try:
+            db.session.add(m)
+            db.session.commit()
+            flash('Manager added', 'success')
+            return redirect(url_for('admin_bp.admin_managers'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Username is already taken. Please choose another.', 'danger')
+            return redirect(url_for('admin_bp.admin_add_manager'))
+            
     sites = Site.query.filter_by(
         company_id=current_user.company_id,
         is_active=True
@@ -51,7 +66,7 @@ def admin_edit_manager(manager_id):
     if not _admin_required():
         return redirect(url_for('auth.login'))
 
-    manager = User.query.filter_by(id=manager_id, role='manager').first_or_404()
+    manager = User.query.filter_by(id=manager_id, role='manager', company_id=current_user.company_id).first_or_404()
     sites = Site.query.filter_by(
         company_id=current_user.company_id,
         is_active=True
@@ -60,16 +75,30 @@ def admin_edit_manager(manager_id):
     if request.method == 'POST':
         from werkzeug.security import generate_password_hash
         manager.username = request.form.get('username')
+        
         site_id = request.form.get('site_id')
-        manager.site_id = int(site_id) if site_id else None
+        if site_id:
+            site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+            if not site:
+                flash("Invalid site selected.", "danger")
+                return redirect(url_for('admin_bp.admin_edit_manager', manager_id=manager_id))
+            manager.site_id = int(site_id)
+        else:
+            manager.site_id = None
 
         new_password = request.form.get('password', '').strip()
         if new_password:
             manager.password = generate_password_hash(new_password)
 
-        db.session.commit()
-        flash('Manager updated successfully', 'success')
-        return redirect(url_for('admin_bp.admin_managers'))
+        from sqlalchemy.exc import IntegrityError
+        try:
+            db.session.commit()
+            flash('Manager updated successfully', 'success')
+            return redirect(url_for('admin_bp.admin_managers'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Username is already taken. Please choose another.', 'danger')
+            return redirect(url_for('admin_bp.admin_edit_manager', manager_id=manager_id))
 
     return render_template(
         'admin_edit_manager.html',
@@ -85,7 +114,7 @@ def delete_manager(manager_id):
     if not _admin_required():
         return redirect(url_for('auth.login'))
 
-    manager = User.query.filter_by(id=manager_id, role='manager').first_or_404()
+    manager = User.query.filter_by(id=manager_id, role='manager', company_id=current_user.company_id).first_or_404()
     db.session.delete(manager)
     db.session.commit()
 

@@ -179,6 +179,24 @@
         cursor: help;
     }
 
+    /* --- MOBILE OPTIMIZATIONS --- */
+    @media (max-width: 768px) {
+        .insight-bar {
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .table-modern th {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        .table-modern td {
+            padding: 0.75rem 0.5rem;
+        }
+        .status-select {
+            padding: 10px 4px; /* Taller for thumbs */
+            font-size: 0.8rem;
+        }
+    }
 
 </style>
 
@@ -333,21 +351,24 @@
     }
 
     function updateCounts() {
-        // Calculate dynamic stats for the widget based on current dropdown states
         let presentCount = 0;
-        let totalDropdowns = 0;
+        let totalLabours = 0;
 
-        // We count a labour as "Present" if they are marked Present in the DAY shift
-        // You can adjust logic to be (Morning OR Day OR Night) if preferred.
-        document.querySelectorAll('.status-select').forEach(select => {
-            if (select.name.includes('_day')) { 
-                totalDropdowns++;
-                if (select.value === 'present') presentCount++;
+        // Count a labour as "Present" if they are marked Present in ANY shift (Morning, Day, OR Night)
+        document.querySelectorAll('tbody tr').forEach(row => {
+            let selects = row.querySelectorAll('.status-select');
+            if (selects.length > 0) {
+                totalLabours++;
+                let isPresent = false;
+                selects.forEach(select => {
+                    if (select.value === 'present') isPresent = true;
+                });
+                if (isPresent) presentCount++;
             }
         });
 
         document.getElementById('count-present').innerText = presentCount;
-        document.getElementById('count-absent').innerText = totalDropdowns - presentCount;
+        document.getElementById('count-absent').innerText = totalLabours - presentCount;
     }
 
     // Init

@@ -381,12 +381,14 @@ from services.labour_summary_service import build_monthly_summary
 @admin_bp.route('/api/labour/<int:labour_id>/monthly-summary')
 @login_required
 def labour_monthly_summary(labour_id):
+    if not _admin_required():
+        return jsonify({"error": "Unauthorized"}), 403
 
     month = request.args.get('month')
     if not month:
         return jsonify({"error": "Month is required"}), 400
 
-    labour = Labour.query.get_or_404(labour_id)
+    labour = Labour.query.filter_by(id=labour_id, company_id=current_user.company_id).first_or_404()
 
     summary = build_monthly_summary(labour, month)
 

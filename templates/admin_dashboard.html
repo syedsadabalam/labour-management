@@ -253,6 +253,30 @@
         </div>
     </div>
 
+    <!-- ANALYTICS CHARTS ROW -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border shadow-sm" style="border-radius: 12px; height: 100%;">
+                <div class="card-body" style="height: 300px;">
+                    <h6 class="fw-bold mb-3 text-secondary">7-Day Attendance Trend</h6>
+                    <div style="height: 230px;">
+                        <canvas id="attendanceTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border shadow-sm" style="border-radius: 12px; height: 100%;">
+                <div class="card-body" style="height: 300px;">
+                    <h6 class="fw-bold mb-3 text-secondary">Financial Burn by Site (MTD)</h6>
+                    <div style="height: 230px;">
+                        <canvas id="financialBurnChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-9">
             
@@ -369,4 +393,92 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Attendance Trend Chart
+        const trendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ dashboard.trend_data.labels | tojson }},
+                datasets: [{
+                    label: 'Labours Present',
+                    data: {{ dashboard.trend_data['values'] | tojson }},
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#2563eb',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Financial Burn Chart
+        const sites = {{ dashboard.sites | tojson }};
+        const siteLabels = sites.map(s => s.site_name);
+        const payrollData = sites.map(s => s.payroll_mtd);
+        const advancesData = sites.map(s => s.advances_mtd);
+
+        const burnCtx = document.getElementById('financialBurnChart').getContext('2d');
+        new Chart(burnCtx, {
+            type: 'bar',
+            data: {
+                labels: siteLabels,
+                datasets: [
+                    {
+                        label: 'Payroll',
+                        data: payrollData,
+                        backgroundColor: '#64748b',
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Advances',
+                        data: advancesData,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+
 {% endblock %}

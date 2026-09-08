@@ -12,14 +12,14 @@ def D(val):
         return Decimal("0.00")
 
 
-def get_admin_site_dashboard(site_id: int) -> dict:
+def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
     today = date.today()
     yesterday = today - timedelta(days=1)
 
     # -----------------------------
     # SITE & MANAGER
     # -----------------------------
-    site = Site.query.get(site_id)
+    site = Site.query.filter_by(id=site_id, company_id=company_id).first()
     if not site:
         return None
 

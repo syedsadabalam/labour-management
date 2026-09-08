@@ -98,7 +98,7 @@ def admin_edit_payment(payment_id):
     if not _admin_required():
         return redirect(url_for('auth.login'))
 
-    payment = Payment.query.get_or_404(payment_id)
+    payment = Payment.query.filter_by(id=payment_id, company_id=current_user.company_id).first_or_404()
     sites = Site.query.filter_by(
         company_id=current_user.company_id,
         is_active=True

@@ -263,9 +263,21 @@
                         {% endfor %}
                         
                         <tr class="bg-light fw-bold border-top-2">
-                            <td colspan="5" class="text-end text-secondary text-uppercase small pt-3">Total Payable</td>
-                            <td colspan="4" class="text-end pt-3 text-dark fs-6">
-                                (Export to view totals)
+                            <td colspan="5" class="text-end text-secondary text-uppercase small pt-3 pe-4">Totals</td>
+                            <td class="text-center pt-3 fs-6">
+                                {{ rows | sum(attribute='total_shifts') }}
+                            </td>
+                            <td class="text-end pt-3 font-mono text-amount-positive">
+                                ₹{{ "%.2f"|format(rows | sum(attribute='total_pay')) }}
+                            </td>
+                            <td class="text-end pt-3 font-mono text-amount-negative">
+                                -₹{{ "%.2f"|format(rows | sum(attribute='advance_paid')) }}
+                            </td>
+                            <td class="text-end pt-3 font-mono text-secondary">
+                                -₹{{ "%.2f"|format(rows | sum(attribute='expenses')) }}
+                            </td>
+                            <td class="text-end pt-3 font-mono text-amount-net text-success fs-6">
+                                ₹{{ "%.2f"|format(grand_total) }}
                             </td>
                         </tr>
                     </tbody>

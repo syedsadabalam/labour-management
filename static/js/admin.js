@@ -96,16 +96,28 @@ document.querySelectorAll('.kpi').forEach(k=>{
 document.addEventListener("DOMContentLoaded", () => {
   const toggleBtn = document.getElementById("sidebarToggle");
   const sidebar = document.querySelector(".sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
 
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener("click", () => {
       sidebar.classList.toggle("open");
+      if(overlay) overlay.classList.toggle("show");
+    });
+  }
+  
+  if (overlay && sidebar) {
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
     });
   }
 });
 
 document.querySelectorAll(".sidebar .nav-item").forEach(link => {
   link.addEventListener("click", () => {
-    sidebar.classList.remove("open");
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    if(sidebar) sidebar.classList.remove("open");
+    if(overlay) overlay.classList.remove("show");
   });
 });

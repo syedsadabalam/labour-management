@@ -135,7 +135,7 @@ def admin_site_dashboard(site_id):
     if current_user.role != 'admin':
         return redirect(url_for('auth.login'))
 
-    dashboard = get_admin_site_dashboard(site_id)
+    dashboard = get_admin_site_dashboard(site_id, current_user.company_id)
 
     if not dashboard:
         abort(404)
