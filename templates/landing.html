@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <title>ApnaLabour | Stop Losing Money on Construction Sites</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ApnaLabour - Take full control of daily labour attendance, advances, and site-wise profit. Built for Indian contractors managing 50-200 workers.">
+  
+  <!-- Open Graph / WhatsApp Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ApnaLabour | Stop Losing Money on Construction Sites">
+  <meta property="og:description" content="One-click attendance, advance wage control, and real-time site profit. Zero paper chaos.">
+  <meta property="og:image" content="/static/landing_images/dashboard_full.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/static/landing_images/logo.png">
+  <link rel="shortcut icon" href="/static/landing_images/logo.png">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -407,16 +418,13 @@
       gap: 12px;
     }
     .testimonial-avatar {
-      width: 48px;
-      height: 48px;
+      width: 54px;
+      height: 54px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.1rem;
+      object-fit: cover;
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+      flex-shrink: 0;
     }
     .testimonial-name {
       font-weight: 600;
@@ -553,6 +561,56 @@
       padding: 14px 28px;
     }
 
+    /* --- ROI CALCULATOR --- */
+    .calc-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 36px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .calc-grid { grid-template-columns: 1fr; }
+      .calc-card { padding: 24px; }
+    }
+    .calc-control {
+      margin-bottom: 20px;
+    }
+    .calc-control label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--secondary);
+    }
+    .calc-control input[type="range"] {
+      width: 100%;
+      height: 6px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .calc-result-box {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+    }
+    .calc-savings-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #4ade80;
+      margin: 8px 0;
+    }
+
     /* --- LIVE CHAT WIDGET --- */
     .chat-widget {
       position: fixed;
@@ -666,7 +724,16 @@
     @media (max-width: 768px) {
       .hero-content, .audience-grid { grid-template-columns: 1fr; text-align: center; }
       .hero-text p, .hero-sub-hindi, .trust-micro { margin-left: auto; margin-right: auto; }
-      .header-actions .btn-outline { display: none; } /* Hide login on mobile to save space */
+      .header-actions { display: flex; gap: 8px; }
+      .header-actions .btn-outline { 
+        display: inline-flex; 
+        padding: 8px 12px; 
+        font-size: 13px; 
+      }
+      .header-actions .btn-whatsapp { 
+        padding: 8px 12px; 
+        font-size: 13px; 
+      }
       .audience-list li { justify-content: center; }
       .plan.popular { transform: none; }
     }
@@ -786,6 +853,49 @@
           <div class="problem-icon"><i class="fa-solid fa-chart-line"></i></div>
           <h3>No Site-wise Visibility</h3>
           <p class="text-muted">You know profit only after the month is over — when it’s too late to fix losses.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI CALCULATOR SECTION -->
+  <section class="section-white" style="padding-top: 10px;">
+    <div class="container">
+      <div class="calc-card">
+        <div class="section-header" style="margin-bottom: 30px;">
+          <h2>Calculate How Much Money Your Site Is Losing</h2>
+          <p>Estimate the hidden leakage from ghost attendance, forgotten advances, and diary errors.</p>
+        </div>
+        <div class="calc-grid">
+          <div class="calc-inputs">
+            <div class="calc-control">
+              <label>
+                <span>Workers on your site(s)</span>
+                <span id="calc-workers-val" style="color: var(--primary); font-weight: 700;">60 Workers</span>
+              </label>
+              <input type="range" id="calc-workers" min="15" max="250" value="60" step="5" oninput="updateCalculator()">
+            </div>
+            <div class="calc-control">
+              <label>
+                <span>Average Daily Wage</span>
+                <span id="calc-wage-val" style="color: var(--primary); font-weight: 700;">₹600 / day</span>
+              </label>
+              <input type="range" id="calc-wage" min="350" max="1200" value="600" step="25" oninput="updateCalculator()">
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
+              <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Based on industry average: ~1.5 false attendance shifts & unrecorded advance disputes per worker every month.
+            </div>
+          </div>
+          <div class="calc-result-box">
+            <div style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Estimated Monthly Money Lost</div>
+            <div class="calc-savings-number" id="calc-loss-total">₹63,000</div>
+            <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 20px;">
+              Lost in stolen attendance & forgotten kharcha every month.
+            </div>
+            <a href="https://wa.me/918240153944?text=Hi%20ApnaLabour,%20I%20calculated%20my%20site%20leakage%20and%20want%20to%20stop%20it." target="_blank" class="btn btn-whatsapp" style="width: 100%;">
+              <i class="fa-brands fa-whatsapp"></i> Stop This Loss on My Site
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -921,7 +1031,7 @@
           </div>
           <p class="testimonial-text">"Before ApnaLabour, I used to maintain attendance on paper. Now everything is digital. Saved ₹50,000+ in just 3 months by eliminating fake attendance."</p>
           <div class="testimonial-author">
-            <div class="testimonial-avatar">RK</div>
+            <img src="/static/landing_images/contractor_rajesh.jpg" alt="Rajesh Kumar" class="testimonial-avatar">
             <div>
               <div class="testimonial-name">Rajesh Kumar</div>
               <div class="testimonial-role">Contractor, Mumbai</div>
@@ -939,7 +1049,7 @@
           </div>
           <p class="testimonial-text">"Managing 3 sites was a nightmare. Now I can see attendance and payments for all sites from my phone. Highly recommended!"</p>
           <div class="testimonial-author">
-            <div class="testimonial-avatar">SP</div>
+            <img src="/static/landing_images/contractor_suresh.jpg" alt="Suresh Patel" class="testimonial-avatar">
             <div>
               <div class="testimonial-name">Suresh Patel</div>
               <div class="testimonial-role">Site Manager, Ahmedabad</div>
@@ -957,7 +1067,7 @@
           </div>
           <p class="testimonial-text">"Best investment for my construction business. The advance tracking feature alone is worth the price. No more arguments with labours."</p>
           <div class="testimonial-author">
-            <div class="testimonial-avatar">AK</div>
+            <img src="/static/landing_images/contractor_anil.jpg" alt="Anil Kumar" class="testimonial-avatar">
             <div>
               <div class="testimonial-name">Anil Kumar</div>
               <div class="testimonial-role">Builder, Delhi NCR</div>
@@ -1030,15 +1140,15 @@
     </div>
   </section>
 
-  <!-- EMAIL CAPTURE -->
+  <!-- WHATSAPP LEAD CAPTURE -->
   <section class="section-light">
     <div class="container">
       <div class="email-capture">
-        <h3>Get Early Access & Special Discount</h3>
-        <p>Be the first to know when we launch new features. No spam, ever.</p>
-        <form class="email-form" onsubmit="event.preventDefault(); alert('Thank you! We will contact you soon.');">
-          <input type="email" placeholder="Enter your email address" required>
-          <button type="submit" class="btn btn-primary">Get Updates</button>
+        <h3><i class="fa-brands fa-whatsapp" style="color: #25D366; margin-right: 8px;"></i> Get a 10-Minute Live Demo On WhatsApp</h3>
+        <p>Enter your 10-digit phone number — we'll set up a sample site with your workers in 10 minutes.</p>
+        <form class="email-form" onsubmit="event.preventDefault(); const p = document.getElementById('lead-phone').value; if(p){ window.open('https://wa.me/918240153944?text=' + encodeURIComponent('Hi ApnaLabour, I want a 10-minute demo for my construction site. My phone number is: ' + p), '_blank'); }">
+          <input type="tel" id="lead-phone" placeholder="Enter your 10-digit phone number" pattern="[0-9]{10}" required style="color: #1e293b;">
+          <button type="submit" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Get Instant Demo</button>
         </form>
       </div>
     </div>
@@ -1063,7 +1173,7 @@
             <li><i class="fa-solid fa-check"></i> Basic Reports</li>
             <li><i class="fa-solid fa-xmark" style="color: red;"></i> No Audit Logs</li>
           </ul>
-          <a href="#" class="btn btn-outline dark" style="width:100%">Start Free Trial</a>
+          <a href="https://wa.me/918240153944?text=Hi%20ApnaLabour,%20I%20want%20to%20start%20the%20Starter%20Plan%20(₹999/mo)%20for%20my%20site." target="_blank" class="btn btn-outline dark" style="width:100%"><i class="fa-brands fa-whatsapp"></i> Start Free Trial</a>
         </div>
 
         <div class="plan popular">
@@ -1078,7 +1188,7 @@
             <li><i class="fa-solid fa-check"></i> All Reports </li>
             <li><i class="fa-solid fa-xmark" style="color: red;"></i> No Audit Logs</li>
           </ul>
-          <a href="#" class="btn btn-primary" style="width:100%">Start Free Trial</a>
+          <a href="https://wa.me/918240153944?text=Hi%20ApnaLabour,%20I%20want%20to%20start%20the%20Standard%20Plan%20(₹1,999/mo)%20for%20my%20sites." target="_blank" class="btn btn-primary" style="width:100%"><i class="fa-brands fa-whatsapp"></i> Start Free Trial</a>
         </div>
 
         <div class="plan">
@@ -1092,7 +1202,7 @@
             <li><i class="fa-solid fa-check"></i> Multiple Reports</li>
             <li><i class="fa-solid fa-check"></i> Full Audit Logs</li>
           </ul>
-          <a href="#" class="btn btn-outline dark" style="width:100%">Contact Sales</a>
+          <a href="https://wa.me/918240153944?text=Hi%20ApnaLabour,%20I%20need%20the%20Enterprise%20Plan%20(₹2,999/mo)%20for%20my%20company." target="_blank" class="btn btn-outline dark" style="width:100%"><i class="fa-brands fa-whatsapp"></i> Contact Sales</a>
         </div>
       </div>
     </div>
@@ -1165,13 +1275,38 @@
       });
     });
 
+    // ROI Calculator
+    function updateCalculator() {
+      const workersInput = document.getElementById('calc-workers');
+      const wageInput = document.getElementById('calc-wage');
+      if (!workersInput || !wageInput) return;
+
+      const workers = parseInt(workersInput.value, 10);
+      const wage = parseInt(wageInput.value, 10);
+
+      const workersVal = document.getElementById('calc-workers-val');
+      const wageVal = document.getElementById('calc-wage-val');
+      const totalVal = document.getElementById('calc-loss-total');
+
+      if (workersVal) workersVal.innerText = workers + ' Workers';
+      if (wageVal) wageVal.innerText = '₹' + wage.toLocaleString('en-IN') + ' / day';
+
+      // 1.5 fake attendance days per worker + ₹250 advance disputes per worker
+      const ghostLoss = workers * wage * 1.5;
+      const advanceLoss = workers * 250;
+      const totalLost = Math.round(ghostLoss + advanceLoss);
+
+      if (totalVal) totalVal.innerText = '₹' + totalLost.toLocaleString('en-IN');
+    }
+    updateCalculator();
+
     // Scroll Reveal Animation
     function reveal() {
       const reveals = document.querySelectorAll('.reveal');
       reveals.forEach(element => {
         const windowHeight = window.innerHeight;
         const elementTop = element.getBoundingClientRect().top;
-        const elementVisible = 150;
+        const elementVisible = 100;
         
         if (elementTop < windowHeight - elementVisible) {
           element.classList.add('active');
@@ -1186,7 +1321,7 @@
       section.classList.add('reveal');
     });
     
-    // Trigger initial check
+    // Trigger initial check immediately
     reveal();
   </script>
 

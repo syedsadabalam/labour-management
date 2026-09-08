@@ -4,7 +4,7 @@ from config import Config
 from extensions import db, login_manager
 from models import User
 
-from flask import redirect, url_for, request
+from flask import redirect, url_for, request, send_from_directory
 from flask_login import current_user
 from services.plan_service import is_plan_expired
 
@@ -91,6 +91,14 @@ def create_app():
     @app.route("/")
     def index():
         return render_template("landing.html")
+
+    @app.route("/favicon.ico")
+    def favicon():
+        return send_from_directory(
+            os.path.join(app.root_path, "static", "landing_images"),
+            "logo.png",
+            mimetype="image/png"
+        )
 
     return app
 

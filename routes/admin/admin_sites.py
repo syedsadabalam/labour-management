@@ -142,7 +142,8 @@ def admin_site_dashboard(site_id):
 
     return render_template(
         'admin_site_dashboard.html',
-        dashboard=dashboard
+        dashboard=dashboard,
+        now=date.today()
     )
 
 

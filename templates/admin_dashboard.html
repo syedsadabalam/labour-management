@@ -385,6 +385,10 @@
                                 <i class="fa-solid fa-circle-xmark text-danger" title="Missing"></i>
                             {% endif %}
                         </li>
+                        {% else %}
+                        <li class="list-group-item text-secondary text-center small py-3">
+                            No managers assigned to sites yet
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>

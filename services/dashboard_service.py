@@ -197,15 +197,19 @@ def get_admin_dashboard_data(company_id):
         )
 
         status = "OK"
+        alerts = []
         if not site.is_active:
             status = "INACTIVE"
         elif present == 0:
             status = "CRITICAL"
+            alerts.append("Attendance not marked today")
             critical_alerts += 1
         elif delayed:
             status = "DELAYED"
+            alerts.append("Attendance submission delayed")
         elif attendance_pct < 70:
             status = "WARNING"
+            alerts.append(f"Low attendance ({attendance_pct}%)")
 
         manager = next(
             (u.username for u in site.users if u.role == "manager"),
@@ -223,7 +227,8 @@ def get_admin_dashboard_data(company_id):
             "payroll_mtd": float(payroll),
             "advances_mtd": float(advance),
             "advance_ratio": advance_ratio,
-            "status": status
+            "status": status,
+            "alerts": alerts
         })
 
     # =====================================================
@@ -246,6 +251,11 @@ def get_admin_dashboard_data(company_id):
 
     for site in site_cards:
         if site["manager_name"] == "—":
+            managers.append({
+                "manager": "Unassigned",
+                "site": site["site_name"],
+                "status": "Delayed"
+            })
             continue
 
         status = "Healthy"
@@ -255,7 +265,7 @@ def get_admin_dashboard_data(company_id):
             status = "Delayed"
 
         managers.append({
-            
+            "manager": site["manager_name"],
             "site": site["site_name"],
             "status": status
         })
