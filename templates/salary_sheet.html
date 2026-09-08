@@ -197,7 +197,7 @@
 
             {% if rows %}
             <div class="col-md-3 text-end">
-                <a href="{{ request.full_path }}&export=1" class="btn-success-custom">
+                <a href="{{ url_for('admin_bp.labour_salary_sheet', site_id=selected_site, month=selected_month, export=1) }}" class="btn-success-custom">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </a>
             </div>
