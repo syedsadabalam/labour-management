@@ -131,12 +131,12 @@ def monthly_report():
             night = float(r.night_shift or 0)
 
             total_shifts = morning + day + night
-            wage = Decimal(r.daily_wage or 0)
+            wage = Decimal(str(r.daily_wage or 0))
 
-            total_pay = wage * total_shifts
+            total_pay = round(wage * Decimal(str(total_shifts)), 2)
 
-            advance = Decimal(r.advance_paid or 0)
-            expenses = Decimal(r.expenses or 0)
+            advance = Decimal(str(r.advance_paid or 0))
+            expenses = Decimal(str(r.expenses or 0))
 
             net = total_pay - advance - expenses
             grand_total += net
@@ -296,7 +296,7 @@ def labour_salary_sheet():
 
         for r in raw_rows:
             total_shifts = float(r.morning_shift or 0) + float(r.day_shift or 0) + float(r.night_shift or 0)
-            total_pay = Decimal(r.daily_wage) * total_shifts
+            total_pay = round(Decimal(str(r.daily_wage or 0)) * Decimal(str(total_shifts)), 2)
 
             rows.append({
                 'name': r.name,
@@ -329,12 +329,13 @@ def labour_salary_sheet():
                 'Total Pay': grand_total
             }
 
-            output = pd.ExcelWriter('salary_sheet.xlsx', engine='xlsxwriter')
-            df.to_excel(output, index=False, sheet_name='Salary Sheet')
-            output.close()
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Salary Sheet')
+            output.seek(0)
 
             return Response(
-                open('salary_sheet.xlsx', 'rb'),
+                output,
                 mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 headers={'Content-Disposition': 'attachment;filename=Labour_Salary_Sheet.xlsx'}
             )
