@@ -1,20 +1,22 @@
 {% extends "base.html" %}
+{% block title %}Admin Dashboard | ApnaLabor{% endblock %}
 {% block content %}
 
 <style>
     /* --- SENIOR DEVELOPER THEME --- */
     :root {
-        --bg-body: #f1f5f9;
+        --bg-body: #f8fafc;
         --bg-surface: #ffffff;
         --text-primary: #0f172a;
         --text-secondary: #64748b;
         --primary: #2563eb;
+        --primary-light: #eff6ff;
         --success: #10b981;
         --warning: #f59e0b;
         --danger: #ef4444;
         --border: #e2e8f0;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     }
 
     body {
@@ -38,8 +40,8 @@
         color: var(--text-secondary);
         font-weight: 500;
         padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.9rem;
+        border-radius: 8px;
+        font-size: 0.88rem;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
@@ -48,12 +50,11 @@
         border: 1px solid transparent;
     }
     .nav-pill-custom:hover {
-        background-color: #f8fafc;
+        background-color: #f1f5f9;
         color: var(--primary);
-        border-color: var(--border);
     }
     .nav-pill-custom.active {
-        background-color: #eff6ff;
+        background-color: var(--primary-light);
         color: var(--primary);
         border-color: #bfdbfe;
     }
@@ -63,33 +64,39 @@
         background: var(--bg-surface);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 1.5rem;
+        padding: 1.35rem 1.4rem;
         box-shadow: var(--shadow-sm);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stat-widget:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
     }
     .stat-label {
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.75rem;
+        font-weight: 700;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.4rem;
     }
     .stat-value {
-        font-size: 1.75rem;
-        font-weight: 700;
+        font-size: 1.85rem;
+        font-weight: 800;
         color: var(--text-primary);
-        line-height: 1.2;
+        line-height: 1.15;
     }
     .stat-delta {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         margin-top: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
+        font-weight: 600;
     }
     .text-trend-up { color: var(--success); }
     .text-trend-down { color: var(--danger); }
@@ -99,7 +106,7 @@
         background: var(--bg-surface);
         border: 1px solid var(--border);
         border-radius: 12px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.15s, box-shadow 0.15s;
         overflow: hidden;
         height: 100%;
         display: flex;
@@ -111,7 +118,7 @@
         border-color: #cbd5e1;
     }
     .site-header {
-        padding: 1.25rem;
+        padding: 1rem 1.25rem;
         border-bottom: 1px solid var(--border);
         background: #fcfcfc;
         display: flex;
@@ -133,24 +140,37 @@
     /* Progress Bar Custom */
     .progress-thin {
         height: 6px;
-        border-radius: 3px;
+        border-radius: 999px;
         background-color: #e2e8f0;
         margin-top: 8px;
     }
 
-    /* Alerts Panel */
+    /* Routine Notice Banner */
+    .routine-notice {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Critical Alerts Panel */
     .alert-panel {
         background: #fef2f2;
         border: 1px solid #fecaca;
-        border-radius: 8px;
-        padding: 1rem;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
     }
     .alert-item {
         display: flex;
         gap: 10px;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         color: #991b1b;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
         align-items: flex-start;
     }
     .alert-item:last-child { margin-bottom: 0; }
@@ -159,13 +179,14 @@
     .list-group-custom .list-group-item {
         border: none;
         border-bottom: 1px solid var(--border);
-        padding: 10px 0;
-        font-size: 0.9rem;
+        padding: 11px 0;
+        font-size: 0.88rem;
     }
     .list-group-custom .list-group-item:last-child { border-bottom: none; }
 
 </style>
 
+<!-- Top Sub-Navigation -->
 <div class="admin-nav sticky-top">
     <a href="{{ url_for('admin_bp.admin_sites') }}" class="nav-pill-custom">
         <i class="fa-solid fa-building"></i> Sites
@@ -189,31 +210,50 @@
 
 <div class="container-fluid py-4 px-4">
 
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="fw-bold mb-1">Dashboard Overview</h4>
-            <p class="text-secondary small mb-0">Real-time snapshot of site operations and financials.</p>
+            <p class="text-secondary small mb-0">Real-time telemetry of multi-site operations and labor financials.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-white text-secondary border px-3 py-2 fw-normal">
-                <i class="fa-solid fa-calendar me-2"></i> {{ dashboard.current_date }}
+            <span class="badge bg-white text-secondary border px-3 py-2 fw-normal shadow-sm">
+                <i class="fa-solid fa-calendar-day me-2 text-primary"></i> {{ dashboard.current_date }}
             </span>
         </div>
     </div>
 
+    <!-- 4 Primary KPI Cards -->
     <div class="row g-3 mb-4">
+        
+        <!-- Attendance KPI (Option B Baseline) -->
         <div class="col-md-3">
             <div class="stat-widget">
                 <div>
-                    <div class="stat-label">Daily Attendance</div>
-                    <div class="stat-value">{{ dashboard.system_status.attendance_percent }}%</div>
+                    <div class="stat-label">Daily Turnout Rate</div>
+                    <div class="stat-value">
+                        {{ dashboard.system_status.display_attendance_percent }}%
+                    </div>
                 </div>
                 <div class="progress progress-thin">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ dashboard.system_status.attendance_percent }}%"></div>
+                    <div class="progress-bar {% if dashboard.system_status.display_attendance_percent < 50 %}bg-warning{% else %}bg-primary{% endif %}" 
+                         role="progressbar" style="width: {{ dashboard.system_status.display_attendance_percent }}%"></div>
                 </div>
+                {% if dashboard.system_status.is_baseline_display %}
+                <div class="stat-delta text-secondary">
+                    <i class="fa-solid fa-clock-rotate-left text-warning"></i>
+                    <span>Yesterday Baseline (Today Pending)</span>
+                </div>
+                {% else %}
+                <div class="stat-delta text-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Today's Verified Turnout</span>
+                </div>
+                {% endif %}
             </div>
         </div>
 
+        <!-- Active Sites -->
         <div class="col-md-3">
             <div class="stat-widget">
                 <div>
@@ -223,43 +263,82 @@
                     </div>
                 </div>
                 <div class="stat-delta text-success">
-                    <i class="fa-solid fa-circle-check"></i> Operations Normal
+                    <i class="fa-solid fa-circle-check"></i> Operations Live
                 </div>
             </div>
         </div>
 
+        <!-- Payroll Exposure MTD -->
         <div class="col-md-3">
             <div class="stat-widget">
                 <div>
                     <div class="stat-label">Payroll Exposure (MTD)</div>
-                    <div class="stat-value">₹{{ dashboard.financial_risk.payroll_mtd }}</div>
+                    <div class="stat-value">₹{{ "{:,.0f}".format(dashboard.financial_risk.payroll_mtd) }}</div>
                 </div>
                 <div class="stat-delta text-secondary">
-                    <span>Advances: <strong>{{ dashboard.financial_risk.ratio }}%</strong> of payroll</span>
+                    <span>Advances: <strong class="text-dark">{{ dashboard.financial_risk.ratio }}%</strong> of payroll</span>
                 </div>
             </div>
         </div>
 
+        <!-- Action / Alerts Card (Distinguished) -->
         <div class="col-md-3">
+            {% if dashboard.system_status.alerts > 0 %}
             <div class="stat-widget" style="border-left: 4px solid var(--danger);">
                 <div>
                     <div class="stat-label text-danger">Critical Alerts</div>
                     <div class="stat-value text-danger">{{ dashboard.system_status.alerts }}</div>
                 </div>
                 <div class="stat-delta text-danger">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Action Required
+                    <i class="fa-solid fa-triangle-exclamation"></i> Financial or Safety Action
                 </div>
             </div>
+            {% else %}
+            <div class="stat-widget" style="border-left: 4px solid var(--warning);">
+                <div>
+                    <div class="stat-label text-warning">Pending Routine</div>
+                    <div class="stat-value text-warning">{{ dashboard.system_status.pending_attendance_sites }}</div>
+                </div>
+                <div class="stat-delta text-secondary">
+                    <i class="fa-regular fa-clock text-warning"></i> Attendance Awaiting Entry
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Routine Pending Notice Banner (If any site is pending today) -->
+    {% if dashboard.today_is_pending %}
+    <div class="routine-notice">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid fa-circle-info text-warning fs-4"></i>
+            <div>
+                <strong class="d-block text-dark">Today's Attendance Submissions In Progress</strong>
+                <span class="small text-secondary">
+                    {{ dashboard.system_status.pending_attendance_sites }} active site(s) have not submitted today's shift log yet. Displaying yesterday's verified baseline ({{ dashboard.yesterday_baseline.present }} labours, {{ dashboard.yesterday_baseline.percent }}% turnout) for continuous operational visibility.
+                </span>
+            </div>
+        </div>
+        <a href="{{ url_for('admin_bp.attendance_report') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold text-nowrap">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Review Logs
+        </a>
+    </div>
+    {% endif %}
 
     <!-- ANALYTICS CHARTS ROW -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card border shadow-sm" style="border-radius: 12px; height: 100%;">
-                <div class="card-body" style="height: 300px;">
-                    <h6 class="fw-bold mb-3 text-secondary">7-Day Attendance Trend</h6>
-                    <div style="height: 230px;">
+                <div class="card-body" style="height: 310px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0 text-secondary">7-Day Attendance Turnout Trend</h6>
+                        {% if dashboard.trend_data.is_baseline_today %}
+                        <span class="badge bg-light text-secondary border small fw-normal">
+                            <i class="fa-solid fa-clock-rotate-left me-1 text-warning"></i> Today = Yesterday Baseline
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="height: 235px;">
                         <canvas id="attendanceTrendChart"></canvas>
                     </div>
                 </div>
@@ -267,9 +346,12 @@
         </div>
         <div class="col-md-6">
             <div class="card border shadow-sm" style="border-radius: 12px; height: 100%;">
-                <div class="card-body" style="height: 300px;">
-                    <h6 class="fw-bold mb-3 text-secondary">Financial Burn by Site (MTD)</h6>
-                    <div style="height: 230px;">
+                <div class="card-body" style="height: 310px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0 text-secondary">Financial Burn & Advances by Site (MTD)</h6>
+                        <span class="badge bg-light text-secondary border small fw-normal">Gross vs Advances</span>
+                    </div>
+                    <div style="height: 235px;">
                         <canvas id="financialBurnChart"></canvas>
                     </div>
                 </div>
@@ -277,64 +359,86 @@
         </div>
     </div>
 
+    <!-- MAIN OPERATIONS & SIDEBAR -->
     <div class="row g-4">
+        
+        <!-- Left: Site Performance Cards -->
         <div class="col-lg-9">
             
             {% if dashboard.system_status.alerts > 0 %}
             <div class="alert-panel mb-4">
-                <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-bell me-2"></i>Immediate Attention Needed</h6>
+                <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-triangle-exclamation me-2"></i>Immediate Action Needed</h6>
                 {% for site in dashboard.sites %}
                     {% for alert in site.alerts %}
+                        {% if 'advance' in alert.lower() or 'no site manager' in alert.lower() %}
                         <div class="alert-item">
                             <i class="fa-solid fa-circle-exclamation mt-1"></i>
                             <div><strong>{{ site.site_name }}:</strong> {{ alert }}</div>
                         </div>
+                        {% endif %}
                     {% endfor %}
                 {% endfor %}
             </div>
             {% endif %}
 
-            <h5 class="fw-bold text-dark mb-3">Site Performance</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">Site Performance & Operations</h5>
+                <span class="text-secondary small">{{ dashboard.sites | length }} Monitored Sites</span>
+            </div>
+
             <div class="row g-3">
                 {% for site in dashboard.sites %}
                 <div class="col-md-4">
                     <div class="site-card">
                         <div class="site-header">
-                            <h6 class="fw-bold mb-0 text-truncate" title="{{ site.site_name }}">{{ site.site_name }}</h6>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-truncate" title="{{ site.site_name }}">{{ site.site_name }}</h6>
+                                <div class="text-muted" style="font-size: 0.75rem;">Manager: <strong class="text-dark">{{ site.manager_name }}</strong></div>
+                            </div>
                             {% if site.status == 'CRITICAL' %}
-                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Critcial</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Critical</span>
+                            {% elif site.status == 'PENDING' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending Entry</span>
                             {% elif site.status == 'DELAYED' %}
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Late</span>
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Late</span>
                             {% elif site.total_labours == 0 %}
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary">Inactive</span>
+                                <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
                             {% else %}
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
                             {% endif %}
                         </div>
                         <div class="site-body">
                             <div class="d-flex justify-content-between text-secondary small mb-1">
-                                <span>Attendance</span>
-                                <span class="fw-bold text-dark">{{ site.attendance_percent }}%</span>
+                                <span>Turnout</span>
+                                {% if site.present_today > 0 %}
+                                    <span class="fw-bold text-dark">{{ site.present_today }} / {{ site.total_labours }} ({{ site.attendance_percent }}%)</span>
+                                {% else %}
+                                    <span class="text-muted small">Yesterday: {{ site.yesterday_present }} / {{ site.total_labours }}</span>
+                                {% endif %}
                             </div>
                             <div class="progress progress-thin mb-3">
-                                <div class="progress-bar {% if site.attendance_percent < 50 %}bg-danger{% else %}bg-success{% endif %}" 
-                                     role="progressbar" style="width: {{ site.attendance_percent }}%"></div>
+                                <div class="progress-bar {% if site.attendance_percent < 50 and site.present_today > 0 %}bg-danger{% elif site.present_today > 0 %}bg-success{% else %}bg-warning opacity-50{% endif %}" 
+                                     role="progressbar" style="width: {{ site.attendance_percent if site.present_today > 0 else 50 }}%"></div>
                             </div>
                             
                             <div class="row g-2 small">
                                 <div class="col-6">
-                                    <div class="text-secondary" style="font-size: 0.75rem;">PAYROLL</div>
-                                    <div class="fw-semibold">₹{{ site.payroll_mtd }}</div>
+                                    <div class="text-secondary" style="font-size: 0.72rem; font-weight: 600;">GROSS PAYROLL</div>
+                                    <div class="fw-bold text-dark">₹{{ "{:,.0f}".format(site.payroll_mtd) }}</div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="text-secondary" style="font-size: 0.75rem;">ADVANCES</div>
-                                    <div class="fw-semibold">₹{{ site.advances_mtd }}</div>
+                                    <div class="text-secondary" style="font-size: 0.72rem; font-weight: 600;">ADVANCES</div>
+                                    <div class="fw-bold text-warning">₹{{ "{:,.0f}".format(site.advances_mtd) }}</div>
                                 </div>
                             </div>
                         </div>
                         <div class="site-footer">
-                            <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.site_id) }}" class="btn btn-sm btn-outline-secondary w-100" style="font-size: 0.8rem;">Dashboard</a>
-                            <a href="{{ url_for('admin_bp.admin_monthly_attendance', site_id=site.site_id ) }}" class="btn btn-sm btn-outline-primary w-100" style="font-size: 0.8rem;">Attendance</a>
+                            <a href="{{ url_for('admin_bp.admin_site_dashboard', site_id=site.site_id) }}" class="btn btn-sm btn-outline-secondary w-100" style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-gauge me-1"></i> Dashboard
+                            </a>
+                            <a href="{{ url_for('admin_bp.admin_monthly_attendance', site_id=site.site_id ) }}" class="btn btn-sm btn-outline-primary w-100" style="font-size: 0.8rem;">
+                                <i class="fa-regular fa-calendar me-1"></i> Attendance
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -342,48 +446,66 @@
             </div>
         </div>
 
+        <!-- Right: Financial Snapshot & Manager Telemetry -->
         <div class="col-lg-3">
             
+            <!-- Financial Snapshot -->
             <div class="card border mb-4 shadow-sm" style="border-radius: 12px;">
                 <div class="card-header bg-white fw-bold border-bottom py-3">
-                    <i class="fa-solid fa-chart-line me-2 text-primary"></i>Financial Snapshot
+                    <i class="fa-solid fa-chart-line me-2 text-primary"></i>Financial Snapshot (MTD)
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary small">Total Payroll</span>
-                        <span class="fw-bold">₹{{ dashboard.financial_risk.payroll_mtd }}</span>
+                        <span class="text-secondary small">Gross Accrued</span>
+                        <span class="fw-bold text-dark">₹{{ "{:,.0f}".format(dashboard.financial_risk.payroll_mtd) }}</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary small">Total Advances</span>
-                        <span class="fw-bold text-danger">₹{{ dashboard.financial_risk.advances }}</span>
+                        <span class="text-secondary small">Advances Paid</span>
+                        <span class="fw-bold text-warning">₹{{ "{:,.0f}".format(dashboard.financial_risk.advances) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary small">Net Payable</span>
+                        <span class="fw-bold text-success">₹{{ "{:,.0f}".format(dashboard.financial_risk.net_payable) }}</span>
                     </div>
                     <hr class="my-2 text-secondary opacity-25">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small">Risk Ratio</span>
-                        <span class="badge bg-warning text-dark">{{ dashboard.financial_risk.ratio }}%</span>
+                        <span class="text-secondary small">Risk Exposure</span>
+                        <span class="badge {% if dashboard.financial_risk.ratio > 30 %}bg-danger{% elif dashboard.financial_risk.ratio > 20 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            {{ dashboard.financial_risk.ratio }}%
+                        </span>
                     </div>
                 </div>
             </div>
 
+            <!-- Manager Status & Follow-Up Card -->
             <div class="card border shadow-sm" style="border-radius: 12px;">
-                <div class="card-header bg-white fw-bold border-bottom py-3">
-                    <i class="fa-solid fa-user-tie me-2 text-primary"></i>Manager Status
+                <div class="card-header bg-white fw-bold border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fa-solid fa-user-tie me-2 text-primary"></i>Manager Status
+                    </div>
+                    <span class="badge bg-light text-secondary border small">{{ dashboard.managers | length }} Managers</span>
                 </div>
                 <div class="card-body p-0">
-                    <ul class="list-group list-group-custom px-3">
+                    <ul class="list-group list-group-custom px-3 mb-0">
                         {% for m in dashboard.managers %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="fw-semibold" style="font-size: 0.85rem;">{{ m.manager }}</div>
-                                <div class="text-secondary" style="font-size: 0.75rem;">{{ m.site }}</div>
+                                <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ m.manager }}</div>
+                                <div class="text-secondary small" style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-location-dot me-1 text-primary"></i>{{ m.site }}
+                                </div>
                             </div>
-                            {% if m.status == 'Healthy' %}
-                                <i class="fa-solid fa-circle-check text-success" title="Marked"></i>
-                            {% elif m.status == 'Delayed' %}
-                                <i class="fa-solid fa-clock text-warning" title="Delayed"></i>
-                            {% else %}
-                                <i class="fa-solid fa-circle-xmark text-danger" title="Missing"></i>
-                            {% endif %}
+                            <div class="d-flex align-items-center gap-2">
+                                {% if m.is_marked %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2 small">
+                                        <i class="fa-solid fa-check me-1"></i>Marked
+                                    </span>
+                                {% else %}
+                                    <a href="{{ url_for('admin_bp.attendance_report', site_id=m.site_id) }}" class="badge bg-warning-subtle text-warning border border-warning-subtle py-1 px-2 small text-decoration-none" title="Review attendance">
+                                        <i class="fa-regular fa-clock me-1"></i>Pending
+                                    </a>
+                                {% endif %}
+                            </div>
                         </li>
                         {% else %}
                         <li class="list-group-item text-secondary text-center small py-3">
@@ -401,22 +523,27 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Attendance Trend Chart
+        // Attendance Trend Chart (Option B: baseline aware)
         const trendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
+        const labels = {{ dashboard.trend_data.labels | tojson }};
+        const values = {{ dashboard.trend_data['values'] | tojson }};
+        const isBaselineToday = {{ 'true' if dashboard.trend_data.is_baseline_today else 'false' }};
+
         new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: {{ dashboard.trend_data.labels | tojson }},
+                labels: labels,
                 datasets: [{
                     label: 'Labours Present',
-                    data: {{ dashboard.trend_data['values'] | tojson }},
+                    data: values,
                     borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 2,
+                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    borderWidth: 2.5,
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.35,
                     pointBackgroundColor: '#2563eb',
-                    pointRadius: 4
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -427,11 +554,26 @@
                     tooltip: {
                         mode: 'index',
                         intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                if (isBaselineToday && context.dataIndex === labels.length - 1) {
+                                    return 'Labours: ' + context.parsed.y + ' (Yesterday Baseline - Today Pending)';
+                                }
+                                return 'Labours: ' + context.parsed.y + ' present';
+                            }
+                        }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { stepSize: 5, precision: 0, color: '#64748b' },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#64748b' }
+                    }
                 }
             }
         });
@@ -449,20 +591,20 @@
                 labels: siteLabels,
                 datasets: [
                     {
-                        label: 'Payroll',
+                        label: 'Gross Payroll',
                         data: payrollData,
-                        backgroundColor: '#64748b',
-                        borderRadius: 4,
-                        barPercentage: 0.6,
-                        categoryPercentage: 0.8
+                        backgroundColor: '#2563eb',
+                        borderRadius: 6,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.75
                     },
                     {
-                        label: 'Advances',
+                        label: 'Advances Paid',
                         data: advancesData,
                         backgroundColor: '#f59e0b',
-                        borderRadius: 4,
-                        barPercentage: 0.6,
-                        categoryPercentage: 0.8
+                        borderRadius: 6,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.75
                     }
                 ]
             },
@@ -470,15 +612,32 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ₹' + Number(context.parsed.y).toLocaleString('en-IN');
+                            }
+                        }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            color: '#64748b',
+                            callback: function(value) {
+                                return '₹' + (value >= 1000 ? (value/1000).toFixed(0) + 'k' : value);
+                            }
+                        }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#64748b' }
+                    }
                 }
             }
         });

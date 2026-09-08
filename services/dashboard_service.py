@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, case, extract, or_
@@ -12,6 +12,7 @@ ATTENDANCE_CUTOFF = time(22, 0)  # 10:00 PM
 
 def get_admin_dashboard_data(company_id):
     today = date.today()
+    yesterday = today - timedelta(days=1)
     year = today.year
     month = today.month
 
@@ -69,6 +70,39 @@ def get_admin_dashboard_data(company_id):
             "present": r.present,
             "delayed": delayed
         }
+
+    # =====================================================
+    # ATTENDANCE YESTERDAY (BASELINE METRIC - OPTION B)
+    # =====================================================
+
+    yesterday_rows = (
+        db.session.query(
+            Attendance.site_id,
+            func.count(func.distinct(Attendance.labour_id)).label("present")
+        )
+        .join(Labour, Labour.id == Attendance.labour_id)
+        .join(Site, Site.id == Attendance.site_id)
+        .filter(
+            Labour.company_id == company_id,
+            Labour.is_active == True,
+            Site.is_active == True,
+            Attendance.date == yesterday,
+            or_(
+                Attendance.morning_shift_flag > 0,
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
+            )
+        )
+        .group_by(Attendance.site_id)
+        .all()
+    )
+
+    yesterday_map = {r.site_id: r.present for r in yesterday_rows}
+    total_yesterday_present = sum(yesterday_map.values())
+    yesterday_attendance_percent = (
+        round((total_yesterday_present / total_active_labours) * 100, 1)
+        if total_active_labours else 0.0
+    )
 
     # =====================================================
     # PAYROLL (MTD)
@@ -142,6 +176,8 @@ def get_admin_dashboard_data(company_id):
     }
 
     total_advances = sum(advance_map.values(), Decimal(0))
+    net_payable_mtd = max(Decimal("0.00"), total_payroll_mtd - total_advances)
+    daily_burn_rate = round(total_payroll_mtd / Decimal(max(1, today.day)), 2)
 
     # =====================================================
     # SITE CARDS
@@ -173,9 +209,11 @@ def get_admin_dashboard_data(company_id):
     total_expected_today = 0
     total_present_today = 0
     critical_alerts = 0
+    pending_attendance_sites = 0
 
     for site in sites:
         total_labours = labour_count_map.get(site.id, 0)
+        yesterday_count = yesterday_map.get(site.id, 0)
 
         att = attendance_map.get(site.id, {})
         present = att.get("present", 0)
@@ -201,9 +239,10 @@ def get_admin_dashboard_data(company_id):
         if not site.is_active:
             status = "INACTIVE"
         elif present == 0:
-            status = "CRITICAL"
-            alerts.append("Attendance not marked today")
-            critical_alerts += 1
+            # Not marked today -> Routinely Pending (not Critical)
+            status = "PENDING"
+            alerts.append("Today's attendance pending")
+            pending_attendance_sites += 1
         elif delayed:
             status = "DELAYED"
             alerts.append("Attendance submission delayed")
@@ -211,10 +250,18 @@ def get_admin_dashboard_data(company_id):
             status = "WARNING"
             alerts.append(f"Low attendance ({attendance_pct}%)")
 
+        # True Critical criteria: high financial risk or no manager
         manager = next(
             (u.username for u in site.users if u.role == "manager"),
             None
         )
+        if not manager and site.is_active:
+            status = "CRITICAL"
+            alerts.append("No site manager assigned")
+            critical_alerts += 1
+        elif advance_ratio > 30:
+            alerts.append(f"High advance risk ({advance_ratio}%)")
+            critical_alerts += 1
 
         site_cards.append({
             "site_id": site.id,
@@ -223,6 +270,7 @@ def get_admin_dashboard_data(company_id):
             "is_active": site.is_active,
             "total_labours": total_labours,
             "present_today": present,
+            "yesterday_present": yesterday_count,
             "attendance_percent": attendance_pct,
             "payroll_mtd": float(payroll),
             "advances_mtd": float(advance),
@@ -232,12 +280,15 @@ def get_admin_dashboard_data(company_id):
         })
 
     # =====================================================
-    # SYSTEM STATUS BAR
+    # SYSTEM STATUS BAR (OPTION B: BASELINE LOGIC)
     # =====================================================
 
+    today_has_attendance = total_present_today > 0
+    today_is_pending = not today_has_attendance
+
     system_attendance_percent = (
-        (total_present_today / total_expected_today) * 100
-        if total_expected_today else 0
+        round((total_present_today / total_expected_today) * 100, 1)
+        if total_expected_today else 0.0
     )
 
     active_sites = sum(
@@ -245,46 +296,36 @@ def get_admin_dashboard_data(company_id):
     )
 
     # =====================================================
-    # FINAL RESPONSE
+    # MANAGERS TELEMETRY LIST
     # =====================================================
     managers = []
 
     for site in site_cards:
-        if site["manager_name"] == "—":
-            managers.append({
-                "manager": "Unassigned",
-                "site": site["site_name"],
-                "status": "Delayed"
-            })
-            continue
-
-        status = "Healthy"
-        if site["status"] == "CRITICAL":
-            status = "Critical"
-        elif site["status"] == "DELAYED":
-            status = "Delayed"
+        att_marked = site["present_today"] > 0
+        status_text = "Submitted" if att_marked else "Pending Entry"
 
         managers.append({
             "manager": site["manager_name"],
             "site": site["site_name"],
-            "status": status
+            "site_id": site["site_id"],
+            "status": status_text,
+            "is_marked": att_marked,
+            "yesterday_present": site["yesterday_present"],
+            "total_labours": site["total_labours"]
         })
 
     attendance_exceptions = []
 
     for site in site_cards:
-        if site["attendance_percent"] < 70 and site["total_labours"] > 0:
+        if site["attendance_percent"] < 70 and site["total_labours"] > 0 and site["present_today"] > 0:
             attendance_exceptions.append({
                 "site_name": site["site_name"],
                 "attendance_percent": site["attendance_percent"]
             })
 
-
     # =====================================================
-    # 7-DAY TREND DATA
+    # 7-DAY TREND DATA (OPTION B: VERIFIED BASELINE INTEGRATION)
     # =====================================================
-    from datetime import timedelta
-    
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
     
     trend_rows = (
@@ -312,26 +353,45 @@ def get_admin_dashboard_data(company_id):
     trend_map = {r.date: r.present for r in trend_rows}
 
     trend_labels = [d.strftime("%b %d") for d in last_7_days]
-    trend_values = [trend_map.get(d, 0) for d in last_7_days]
-
+    trend_values = []
+    
+    for d in last_7_days:
+        if d == today and today_is_pending:
+            # Option B: Use yesterday's verified baseline so the curve doesn't plunge artificially to 0
+            trend_values.append(total_yesterday_present)
+        else:
+            trend_values.append(trend_map.get(d, 0))
 
     return {
+        "current_date": today.strftime("%d %b %Y"),
+        "today_is_pending": today_is_pending,
+        "yesterday_baseline": {
+            "present": total_yesterday_present,
+            "total_labours": total_active_labours,
+            "percent": yesterday_attendance_percent
+        },
         "system_status": {
-            "attendance_percent": round(system_attendance_percent, 1),
+            "attendance_percent": system_attendance_percent,
+            "display_attendance_percent": system_attendance_percent if not today_is_pending else yesterday_attendance_percent,
+            "is_baseline_display": today_is_pending,
             "total_sites": total_sites,
             "active_sites": active_sites,
             "total_payroll_mtd": float(total_payroll_mtd),
             "total_advances": float(total_advances),
+            "net_payable_mtd": float(net_payable_mtd),
+            "daily_burn_rate": float(daily_burn_rate),
             "advance_ratio": round(
                 (total_advances / total_payroll_mtd) * 100, 2
             ) if total_payroll_mtd else 0,
             "alerts": critical_alerts,
+            "pending_attendance_sites": pending_attendance_sites,
             "payroll_state": "Draft"
         },
 
         "financial_risk": {
             "payroll_mtd": float(total_payroll_mtd),
             "advances": float(total_advances),
+            "net_payable": float(net_payable_mtd),
             "ratio": round(
                 (total_advances / total_payroll_mtd) * 100, 2
             ) if total_payroll_mtd else 0
@@ -339,9 +399,11 @@ def get_admin_dashboard_data(company_id):
 
         "trend_data": {
             "labels": trend_labels,
-            "values": trend_values
+            "values": trend_values,
+            "is_baseline_today": today_is_pending
         },
 
+        "managers": managers,
         "attendance_exceptions": attendance_exceptions,
         "sites": site_cards
     }
