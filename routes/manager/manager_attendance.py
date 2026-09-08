@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, abort
+from flask import render_template, request, redirect, url_for, flash, abort, current_app
 from flask_login import login_required, current_user
 from datetime import date, datetime
 from extensions import db
@@ -93,44 +93,57 @@ def manager_mark_attendance():
 
     changes = []  # 🔑 collect audit diffs here
 
+    # 🚀 OPTIMIZATION: Pre-fetch site labours & existing attendance in 2 queries instead of 300+
+    site_labours = {
+        l.id: l
+        for l in Labour.query.filter_by(
+            company_id=current_user.company_id,
+            site_id=current_user.site_id,
+            is_active=True
+        ).all()
+    }
+
+    existing_records = {
+        a.labour_id: a
+        for a in Attendance.query.filter_by(
+            site_id=current_user.site_id,
+            company_id=current_user.company_id,
+            date=selected_date
+        ).all()
+    }
+
     for key, value in request.form.items():
         if not key.startswith("labour_"):
             continue
 
-        _, labour_id, shift = key.split("_")
+        parts = key.split("_")
+        if len(parts) != 3:
+            continue
+        _, labour_id_str, shift = parts
+
         # ---- BLOCK DISALLOWED SHIFTS (SITE LEVEL) ----
         if shift == "morning" and not allow_morning:
             continue
-
         if shift == "day" and not allow_day:
             continue
-
         if shift == "night" and not allow_night:
             continue
 
+        try:
+            labour_id = int(labour_id_str)
+        except ValueError:
+            continue
 
-        labour_id = int(labour_id)
-
-        labour = Labour.query.filter_by(
-            id=labour_id,
-            company_id=current_user.company_id,
-            site_id=current_user.site_id,
-            is_active=True
-        ).first()
-
+        labour = site_labours.get(labour_id)
         if not labour:
             continue
 
-        record = Attendance.query.filter_by(
-            labour_id=labour_id,
-            site_id=current_user.site_id,
-            date=selected_date
-        ).first()
+        record = existing_records.get(labour_id)
 
         # --- capture BEFORE state ---
-        before_morning = record.morning_shift_flag if record else 0
-        before_day = record.day_shift_flag if record else 0
-        before_night = record.night_shift_flag if record else 0
+        before_morning = record.morning_shift_flag if record else 0.0
+        before_day = record.day_shift_flag if record else 0.0
+        before_night = record.night_shift_flag if record else 0.0
 
         if not record:
             record = Attendance(
@@ -138,19 +151,22 @@ def manager_mark_attendance():
                 site_id=current_user.site_id,
                 company_id=current_user.company_id,
                 date=selected_date,
-                morning_shift_flag=0,
-                day_shift_flag=0,
-                night_shift_flag=0
+                morning_shift_flag=0.0,
+                day_shift_flag=0.0,
+                night_shift_flag=0.0
             )
             db.session.add(record)
+            existing_records[labour_id] = record
 
         # --- apply change ---
+        numeric_val = 1.0 if value == "present" else (0.5 if value == "half" else 0.0)
+
         if shift == "morning":
-            record.morning_shift_flag = 1 if value == "present" else 0
+            record.morning_shift_flag = numeric_val
         elif shift == "day":
-            record.day_shift_flag = 1 if value == "present" else 0
+            record.day_shift_flag = numeric_val
         elif shift == "night":
-            record.night_shift_flag = 1 if value == "present" else 0
+            record.night_shift_flag = numeric_val
 
         # --- capture AFTER state ---
         after_morning = record.morning_shift_flag
@@ -158,23 +174,28 @@ def manager_mark_attendance():
         after_night = record.night_shift_flag
 
         # --- detect real change only ---
+        def _get_status_label(val):
+            if val >= 1.0: return "Present"
+            if val == 0.5: return "Half Day"
+            return "Absent"
+
         if (
             before_morning != after_morning or
             before_day != after_day or
-            before_night != after_night):
-            labour = Labour.query.get(labour_id)
+            before_night != after_night
+        ):
             changes.append({
                 "labour_id": labour_id,
-                "labour_name": labour.name if labour else "Unknown",
+                "labour_name": labour.name,
                 "before": {
-                    "morning": "Present" if before_morning else "Absent",
-                    "day": "Present" if before_day else "Absent",
-                    "night": "Present" if before_night else "Absent",
+                    "morning": _get_status_label(before_morning),
+                    "day": _get_status_label(before_day),
+                    "night": _get_status_label(before_night),
                 },
                 "after": {
-                    "morning": "Present" if after_morning else "Absent",
-                    "day": "Present" if after_day else "Absent",
-                    "night": "Present" if after_night else "Absent",
+                    "morning": _get_status_label(after_morning),
+                    "day": _get_status_label(after_day),
+                    "night": _get_status_label(after_night),
                 }
             })
 
@@ -183,21 +204,29 @@ def manager_mark_attendance():
         Attendance.query.filter_by(
             site_id=current_user.site_id,
             date=selected_date
-        ).update({Attendance.morning_shift_flag: 0})
+        ).update({Attendance.morning_shift_flag: 0.0})
 
     if not allow_day:
         Attendance.query.filter_by(
             site_id=current_user.site_id,
             date=selected_date
-        ).update({Attendance.day_shift_flag: 0})
+        ).update({Attendance.day_shift_flag: 0.0})
 
     if not allow_night:
         Attendance.query.filter_by(
             site_id=current_user.site_id,
             date=selected_date
-        ).update({Attendance.night_shift_flag: 0})
+        ).update({Attendance.night_shift_flag: 0.0})
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to commit attendance: {e}")
+        flash("Database error saving attendance. Please try again.", "danger")
+        return redirect(
+            url_for("manager_bp.manager_attendance", date=selected_date.isoformat())
+        )
 
     # --- AUDIT LOG (ONLY IF SOMETHING CHANGED) ---
     if changes:
@@ -272,9 +301,9 @@ def manager_monthly_attendance():
                     case(
                         (
                             or_(
-                                Attendance.morning_shift_flag == 1,
-                                Attendance.day_shift_flag == 1,
-                                Attendance.night_shift_flag == 1
+                                Attendance.morning_shift_flag > 0,
+                                Attendance.day_shift_flag > 0,
+                                Attendance.night_shift_flag > 0
                             ),
                             Attendance.labour_id
                         ),
@@ -284,9 +313,9 @@ def manager_monthly_attendance():
             ).label('present_count'),
 
             # shift-wise counts
-            func.sum(case((Attendance.morning_shift_flag == True, 1), else_=0)).label('morning_count'),
-            func.sum(case((Attendance.day_shift_flag == True, 1), else_=0)).label('day_count'),
-            func.sum(case((Attendance.night_shift_flag == True, 1), else_=0)).label('night_count')
+            func.sum(Attendance.morning_shift_flag).label('morning_count'),
+            func.sum(Attendance.day_shift_flag).label('day_count'),
+            func.sum(Attendance.night_shift_flag).label('night_count')
         )
 
         .filter(
@@ -309,9 +338,9 @@ def manager_monthly_attendance():
         current_date = date(year, month, d)
         r = attendance_map.get(current_date)
 
-        morning = int(r.morning_count) if r else 0
-        day = int(r.day_count) if r else 0
-        night = int(r.night_count) if r else 0
+        morning = float(r.morning_count or 0) if r else 0.0
+        day = float(r.day_count or 0) if r else 0.0
+        night = float(r.night_count or 0) if r else 0.0
         present = int(r.present_count) if r else 0
 
         total_shifts = morning + day + night

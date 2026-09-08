@@ -301,22 +301,28 @@
                         <td class="text-secondary font-monospace small">{{ r.labour.phone }}</td>
                         
                         <td class="text-center">
-                            {% if r.morning_shift_flag %}
+                            {% if r.morning_shift_flag == 1 %}
                                 <span class="status-badge status-present-morning"><i class="fa-regular fa-circle-check"></i> Present</span>
+                            {% elif r.morning_shift_flag == 0.5 %}
+                                <span class="status-badge status-present-morning" style="background: rgba(13, 110, 253, 0.1); color: #0d6efd;"><i class="fa-solid fa-star-half-stroke"></i> Half Day</span>
                             {% else %}
                                 <span class="status-badge status-absent">-</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if r.day_shift_flag %}
+                            {% if r.day_shift_flag == 1 %}
                                 <span class="status-badge status-present-day"><i class="fa-solid fa-check"></i> Present</span>
+                            {% elif r.day_shift_flag == 0.5 %}
+                                <span class="status-badge status-present-day" style="background: rgba(25, 135, 84, 0.1); color: #198754;"><i class="fa-solid fa-star-half-stroke"></i> Half Day</span>
                             {% else %}
                                 <span class="status-badge status-absent">-</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if r.night_shift_flag %}
+                            {% if r.night_shift_flag == 1 %}
                                 <span class="status-badge status-present-night"><i class="fa-solid fa-moon"></i> Present</span>
+                            {% elif r.night_shift_flag == 0.5 %}
+                                <span class="status-badge status-present-night" style="background: rgba(108, 117, 125, 0.1); color: #6c757d;"><i class="fa-solid fa-star-half-stroke"></i> Half Day</span>
                             {% else %}
                                 <span class="status-badge status-absent">-</span>
                             {% endif %}

@@ -194,9 +194,9 @@ class Attendance(db.Model):
 
     date = db.Column(db.Date, nullable=False)
     
-    morning_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
-    day_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
-    night_shift_flag = db.Column(db.Boolean, nullable=False, default=False)
+    morning_shift_flag = db.Column(db.Float, nullable=False, default=0.0)
+    day_shift_flag = db.Column(db.Float, nullable=False, default=0.0)
+    night_shift_flag = db.Column(db.Float, nullable=False, default=0.0)
 
     note = db.Column(db.Text, nullable=True)
 

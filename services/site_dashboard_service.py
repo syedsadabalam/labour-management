@@ -50,9 +50,9 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
             Attendance.site_id == site_id,
             Attendance.date == today,
             or_(
-                Attendance.morning_shift_flag.is_(True),
-                Attendance.day_shift_flag.is_(True),
-                Attendance.night_shift_flag.is_(True)
+                Attendance.morning_shift_flag > 0,
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
             )
         )
         .scalar()
@@ -64,15 +64,15 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
     total_shifts_today = (
         db.session.query(
             func.coalesce(
-                func.sum(case((Attendance.morning_shift_flag.is_(True), 1), else_=0)),
+                func.sum(Attendance.morning_shift_flag),
                 0
             ) +
             func.coalesce(
-                func.sum(case((Attendance.day_shift_flag.is_(True), 1), else_=0)),
+                func.sum(Attendance.day_shift_flag),
                 0
             ) +
             func.coalesce(
-                func.sum(case((Attendance.night_shift_flag.is_(True), 1), else_=0)),
+                func.sum(Attendance.night_shift_flag),
                 0
             )
         )
@@ -102,8 +102,8 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
                     Attendance.site_id == site_id,
                     Attendance.date == today,
                     or_(
-                        Attendance.day_shift_flag.is_(True),
-                        Attendance.night_shift_flag.is_(True)
+                        Attendance.day_shift_flag > 0,
+                        Attendance.night_shift_flag > 0
                     )
                 )
             )
@@ -119,8 +119,8 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
     payroll_mtd = D(
         db.session.query(
             func.sum(
-                case((Attendance.day_shift_flag.is_(True), Labour.daily_wage), else_=0) +
-                case((Attendance.night_shift_flag.is_(True), Labour.daily_wage), else_=0)
+                (Attendance.day_shift_flag * Labour.daily_wage) +
+                (Attendance.night_shift_flag * Labour.daily_wage)
             )
         )
         .select_from(Attendance)
@@ -157,8 +157,8 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
             Attendance.site_id == site_id,
             Attendance.date == yesterday,
             or_(
-                Attendance.day_shift_flag.is_(True),
-                Attendance.night_shift_flag.is_(True)
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
             )
         )
         .scalar()
@@ -167,11 +167,11 @@ def get_admin_site_dashboard(site_id: int, company_id: int) -> dict:
     yesterday_shifts = (
         db.session.query(
             func.coalesce(
-                func.sum(case((Attendance.day_shift_flag.is_(True), 1), else_=0)),
+                func.sum(Attendance.day_shift_flag),
                 0
             ) +
             func.coalesce(
-                func.sum(case((Attendance.night_shift_flag.is_(True), 1), else_=0)),
+                func.sum(Attendance.night_shift_flag),
                 0
             )
         )

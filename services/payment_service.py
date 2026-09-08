@@ -90,6 +90,12 @@ def create_admin_payment(
     if labour.site_id != site_id:
         raise PaymentError("Labour does not belong to selected site")
 
+    if isinstance(date, str):
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        except Exception:
+            date = datetime.today().date()
+
     # -------- CREATE PAYMENT --------
 
     payment = Payment(
@@ -133,6 +139,12 @@ def update_admin_payment(
 ):
     if advance <= 0:
         raise PaymentError("Advance amount must be greater than zero")
+
+    if isinstance(date, str):
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        except Exception:
+            date = datetime.today().date()
 
     payment.date = date
     payment.advance = advance

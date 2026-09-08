@@ -13,6 +13,10 @@ from . import manager_bp
 
 # ✅ SAME UTIL USED BY ADMIN (CRITICAL)
 from routes.admin.utils import save_and_compress_image
+from sqlalchemy.exc import IntegrityError
+import shutil
+import os
+import re
 
 
 # ============================
@@ -89,12 +93,17 @@ def manager_add_labour():
             ifsc_code=request.form.get('ifsc_code'),
             site_id=site.id,
             company_id=current_user.company_id,
-            daily_wage=533.00,
+            daily_wage=None,
             is_active=True                # 🔒 FORCED
         )
 
-        db.session.add(labour)
-        db.session.commit()  # ⚠️ REQUIRED to get labour.id
+        try:
+            db.session.add(labour)
+            db.session.commit()  # ⚠️ REQUIRED to get labour.id
+        except IntegrityError:
+            db.session.rollback()
+            flash("Duplicate labour detected.", "danger")
+            return redirect(url_for('manager_bp.manager_add_labour'))
 
         # ---- FILE UPLOADS (STEP 2) ----
         try:
@@ -132,7 +141,11 @@ def manager_add_labour():
             db.session.commit()
 
         except Exception as e:
-            db.session.rollback()
+            db.session.delete(labour)
+            db.session.commit()
+            upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'labours', str(labour.id))
+            if os.path.exists(upload_dir):
+                shutil.rmtree(upload_dir, ignore_errors=True)
             current_app.logger.error(e)
             flash("File upload failed", "danger")
             return redirect(url_for('manager_bp.manager_labours'))
@@ -175,14 +188,33 @@ def manager_edit_labour(labour_id):
 
     if request.method == 'POST':
 
+        phone = (request.form.get('phone') or '').strip()
+        bank_account = (request.form.get('bank_account') or '').strip()
+
+        # ---- VALIDATIONS ----
+        if phone and not re.fullmatch(r"\d{10}", phone):
+            flash("Phone number must be exactly 10 digits.", "danger")
+            return redirect(url_for("manager_bp.manager_edit_labour", labour_id=labour.id))
+
+        if bank_account and not re.fullmatch(r"\d+", bank_account):
+            flash("Bank account number must contain digits only.", "danger")
+            return redirect(url_for("manager_bp.manager_edit_labour", labour_id=labour.id))
+
         # --------------------
         # BASIC INFO (ALLOWED)
         # --------------------
-        labour.name = request.form.get('name')
-        labour.phone = request.form.get('phone')
-        labour.gate_pass_id = request.form.get('gate_pass_id') or None
-        labour.bank_account = request.form.get('bank_account')
-        labour.ifsc_code = request.form.get('ifsc_code')
+        labour.name = (request.form.get('name') or '').strip()
+        labour.phone = phone
+        labour.gate_pass_id = (request.form.get('gate_pass_id') or '').strip() or None
+        labour.bank_account = bank_account
+        labour.ifsc_code = (request.form.get('ifsc_code') or '').strip()
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("Another labour with this phone number already exists for this site.", "danger")
+            return redirect(url_for('manager_bp.manager_edit_labour', labour_id=labour.id))
 
         # --------------------
         # DOCUMENT UPLOADS

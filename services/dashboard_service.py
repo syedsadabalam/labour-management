@@ -50,9 +50,9 @@ def get_admin_dashboard_data(company_id):
             Site.is_active == True,
             Attendance.date == today,
             or_(
-                Attendance.morning_shift_flag == True,
-                Attendance.day_shift_flag == True,
-                Attendance.night_shift_flag == True
+                Attendance.morning_shift_flag > 0,
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
             )
         )
         .group_by(Attendance.site_id)
@@ -79,9 +79,9 @@ def get_admin_dashboard_data(company_id):
             Attendance.site_id,
             Attendance.labour_id,
             func.sum(
-                case((Attendance.morning_shift_flag == True, 1), else_=0) +
-                case((Attendance.day_shift_flag == True, 1), else_=0) +
-                case((Attendance.night_shift_flag == True, 1), else_=0)
+                Attendance.morning_shift_flag +
+                Attendance.day_shift_flag +
+                Attendance.night_shift_flag
             ).label("shifts")
         )
         .join(Labour, Labour.id == Attendance.labour_id)
@@ -149,10 +149,25 @@ def get_admin_dashboard_data(company_id):
 
     sites = (
         Site.query
-        .options(joinedload(Site.users), joinedload(Site.labours))
+        .options(joinedload(Site.users))
         .filter(Site.company_id == company_id)
         .all()
     )
+
+    active_labour_counts = (
+        db.session.query(
+            Labour.site_id,
+            func.count(Labour.id).label('count')
+        )
+        .filter(
+            Labour.company_id == company_id,
+            Labour.is_active == True
+        )
+        .group_by(Labour.site_id)
+        .all()
+    )
+    
+    labour_count_map = {row.site_id: row.count for row in active_labour_counts}
 
     site_cards = []
     total_expected_today = 0
@@ -160,9 +175,7 @@ def get_admin_dashboard_data(company_id):
     critical_alerts = 0
 
     for site in sites:
-        total_labours = len(
-            [l for l in site.labours if l.is_active]
-        )
+        total_labours = labour_count_map.get(site.id, 0)
 
         att = attendance_map.get(site.id, {})
         present = att.get("present", 0)
@@ -277,9 +290,9 @@ def get_admin_dashboard_data(company_id):
             Site.is_active == True,
             Attendance.date >= last_7_days[0],
             or_(
-                Attendance.morning_shift_flag == True,
-                Attendance.day_shift_flag == True,
-                Attendance.night_shift_flag == True
+                Attendance.morning_shift_flag > 0,
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
             )
         )
         .group_by(Attendance.date)

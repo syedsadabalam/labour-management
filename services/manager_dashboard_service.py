@@ -4,6 +4,13 @@ from datetime import date
 from sqlalchemy import or_
 
 def get_manager_dashboard_data(site_id):
+    if not site_id:
+        return {
+            "total_labours": 0,
+            "present_today": 0,
+            "absent_today": 0
+        }
+
     today = date.today()
 
     total_labours = (
@@ -18,9 +25,9 @@ def get_manager_dashboard_data(site_id):
             Attendance.site_id == site_id,
             Attendance.date == today,
             or_(
-                Attendance.morning_shift_flag == 1,
-                Attendance.day_shift_flag == 1,
-                Attendance.night_shift_flag == 1
+                Attendance.morning_shift_flag > 0,
+                Attendance.day_shift_flag > 0,
+                Attendance.night_shift_flag > 0
             )
         )
         .count()

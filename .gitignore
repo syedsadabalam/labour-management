@@ -13,3 +13,7 @@ Thumbs.db
 
 # instance folder for sqlite
 instance/
+
+# backups & local IDE
+backups/
+.vscode/

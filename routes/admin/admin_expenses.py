@@ -22,11 +22,21 @@ def admin_monthly_expenses():
 
     expenses_map = {}
 
+    if site_id:
+        valid_site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+        if not valid_site:
+            site_id = None
+
     if site_id and month:
-        labours = Labour.query.filter_by(site_id=site_id, is_active=True).all()
+        labours = Labour.query.filter_by(
+            site_id=site_id,
+            company_id=current_user.company_id,
+            is_active=True
+        ).all()
 
         expenses = LabourMonthlyExpenses.query.filter_by(
             site_id=site_id,
+            company_id=current_user.company_id,
             month=month
         ).all()
 

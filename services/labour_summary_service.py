@@ -40,16 +40,16 @@ def build_monthly_summary(labour, month, site_id=None):
     for r in attendance_rows:
         worked = False
 
-        if r.morning_shift_flag:
-            morning_shifts += 1
+        if r.morning_shift_flag > 0:
+            morning_shifts += float(r.morning_shift_flag)
             worked = True
 
-        if r.day_shift_flag:
-            day_shifts += 1
+        if r.day_shift_flag > 0:
+            day_shifts += float(r.day_shift_flag)
             worked = True
 
-        if r.night_shift_flag:
-            night_shifts += 1
+        if r.night_shift_flag > 0:
+            night_shifts += float(r.night_shift_flag)
             worked = True
 
         if not worked:

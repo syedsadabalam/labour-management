@@ -55,6 +55,12 @@ def attendance_report():
 
     # ---------- ONLY QUERY IF SITE SELECTED ----------
     if site_id:
+        # Ensure site belongs to current admin's company (Multi-tenancy isolation)
+        site_obj = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+        if not site_obj:
+            site_id = None
+
+    if site_id:
 
         # BASE QUERY (DO NOT MUTATE)
         base_query = (
@@ -69,23 +75,23 @@ def attendance_report():
 
         # ---------- KPIs (ALWAYS FROM BASE QUERY) ----------
         kpis['morning_present'] = base_query.filter(
-            Attendance.morning_shift_flag == 1
+            Attendance.morning_shift_flag > 0
         ).count()
 
         kpis['day_present'] = base_query.filter(
-            Attendance.day_shift_flag == 1
+            Attendance.day_shift_flag > 0
         ).count()
 
         kpis['night_present'] = base_query.filter(
-            Attendance.night_shift_flag == 1
+            Attendance.night_shift_flag > 0
         ).count()
 
         kpis['unique_labours'] = (
             base_query.filter(
                 or_(
-                    Attendance.morning_shift_flag == 1,
-                    Attendance.day_shift_flag == 1,
-                    Attendance.night_shift_flag == 1
+                    Attendance.morning_shift_flag > 0,
+                    Attendance.day_shift_flag > 0,
+                    Attendance.night_shift_flag > 0
                 )
             )
             .with_entities(Attendance.labour_id)
@@ -98,21 +104,21 @@ def attendance_report():
 
         # Day shift filter
         if day_shift == 'present':
-            query = query.filter(Attendance.day_shift_flag == 1)
+            query = query.filter(Attendance.day_shift_flag > 0)
         elif day_shift == 'absent':
             query = query.filter(Attendance.day_shift_flag == 0)
 
         # Night shift filter
         if night_shift == 'present':
-            query = query.filter(Attendance.night_shift_flag == 1)
+            query = query.filter(Attendance.night_shift_flag > 0)
         elif night_shift == 'absent':
             query = query.filter(Attendance.night_shift_flag == 0)
 
         # Worked type filter
         if worked_type == 'day':
-            query = query.filter(Attendance.day_shift_flag == 1)
+            query = query.filter(Attendance.day_shift_flag > 0)
         elif worked_type == 'night':
-            query = query.filter(Attendance.night_shift_flag == 1)
+            query = query.filter(Attendance.night_shift_flag > 0)
         elif worked_type == 'multiple':
             query = query.filter(
                 (
@@ -124,9 +130,9 @@ def attendance_report():
         elif worked_type == 'any_worked':
             query = query.filter(
                 or_(
-                    Attendance.morning_shift_flag == 1,
-                    Attendance.day_shift_flag == 1,
-                    Attendance.night_shift_flag == 1
+                    Attendance.morning_shift_flag > 0,
+                    Attendance.day_shift_flag > 0,
+                    Attendance.night_shift_flag > 0
                 )
             )
 
@@ -185,30 +191,43 @@ def export_attendance_report():
             d2 = datetime.strptime(end_date, "%Y-%m-%d").date()
     except: d2 = None
 
-    q = Attendance.query.join(Labour, Attendance.labour_id == Labour.id)
+    q = (
+        Attendance.query
+        .join(Labour, Attendance.labour_id == Labour.id)
+        .filter(Labour.company_id == current_user.company_id)
+    )
     if site_id:
         sid = _to_int(site_id)
         if sid:
-            q = q.filter(Attendance.site_id == sid)
+            site_obj = Site.query.filter_by(id=sid, company_id=current_user.company_id).first()
+            if site_obj:
+                q = q.filter(Attendance.site_id == sid)
+            else:
+                return redirect(url_for('admin_bp.attendance_report'))
     if d1:
         q = q.filter(Attendance.date >= d1)
     if d2:
         q = q.filter(Attendance.date <= d2)
     if day_shift_filter:
-        q = q.filter(Attendance.day_shift == day_shift_filter)
+        if day_shift_filter == 'present':
+            q = q.filter(Attendance.day_shift_flag > 0)
+        elif day_shift_filter == 'absent':
+            q = q.filter(Attendance.day_shift_flag == 0)
+        elif day_shift_filter == 'half':
+            q = q.filter(Attendance.day_shift_flag == 0.5)
     if ot_filter:
         if ot_filter == "Yes":
-            q = q.filter(Attendance.night_shift_flag == True)
+            q = q.filter(Attendance.night_shift_flag > 0)
         elif ot_filter == "No":
-            q = q.filter(Attendance.night_shift_flag == False)
+            q = q.filter(Attendance.night_shift_flag == 0.0)
         elif ot_filter == "Worked":
-            q = q.filter(or_(Attendance.day_shift_flag == True, Attendance.night_shift_flag == True))
+            q = q.filter(or_(Attendance.day_shift_flag > 0, Attendance.night_shift_flag > 0))
 
     rows = q.order_by(Attendance.date.desc()).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['id','date','labour_id','labour_name','site_id','day_shift','day_flag','night_shift','night_flag','note'])
+    writer.writerow(['id','date','labour_id','labour_name','site_id','morning_shift_flag','day_shift_flag','night_shift_flag','note'])
     for r in rows:
         writer.writerow([
             r.id,
@@ -216,10 +235,9 @@ def export_attendance_report():
             r.labour_id,
             getattr(r, 'labour').name if getattr(r, 'labour', None) else '',
             r.site_id,
-            r.day_shift,
-            int(bool(r.day_shift_flag)),
-            r.night_shift,
-            int(bool(r.night_shift_flag)),
+            float(r.morning_shift_flag),
+            float(r.day_shift_flag),
+            float(r.night_shift_flag),
             r.note or ''
         ])
     csv_data = output.getvalue()
@@ -269,80 +287,62 @@ def admin_monthly_attendance(site_id):
         is_active=True
     ).count()
 
-    daily_stats = []
-
-    current_day = start_date
-    while current_day < end_date:
-
-        present = (
-            db.session.query(
-                func.count(
-                    func.distinct(
-                        case(
-                            (
-                                or_(
-                                    Attendance.morning_shift_flag.is_(True),
-                                    Attendance.day_shift_flag.is_(True),
-                                    Attendance.night_shift_flag.is_(True)
-                                ),
-                                Attendance.labour_id
+    stats_rows = (
+        db.session.query(
+            Attendance.date,
+            func.count(
+                func.distinct(
+                    case(
+                        (
+                            or_(
+                                Attendance.morning_shift_flag > 0,
+                                Attendance.day_shift_flag > 0,
+                                Attendance.night_shift_flag > 0
                             ),
-                            else_=None
-                        )
+                            Attendance.labour_id
+                        ),
+                        else_=None
                     )
                 )
-            )
-            .filter(
-                Attendance.site_id == site.id,
-                Attendance.date == current_day
-            )
-            .scalar()
-        ) or 0
+            ).label("present"),
+            func.coalesce(func.sum(Attendance.morning_shift_flag), 0.0).label("morning"),
+            func.coalesce(func.sum(Attendance.day_shift_flag), 0.0).label("day"),
+            func.coalesce(func.sum(Attendance.night_shift_flag), 0.0).label("night"),
+        )
+        .filter(
+            Attendance.site_id == site.id,
+            Attendance.date >= start_date,
+            Attendance.date < end_date
+        )
+        .group_by(Attendance.date)
+        .all()
+    )
 
+    stats_map = {
+        row.date: {
+            "present": int(row.present or 0),
+            "morning": float(row.morning or 0.0),
+            "day": float(row.day or 0.0),
+            "night": float(row.night or 0.0),
+            "total_shifts": float((row.morning or 0.0) + (row.day or 0.0) + (row.night or 0.0)),
+        }
+        for row in stats_rows
+    }
 
-        morning_shift = (
-            db.session.query(func.count())
-            .filter(
-                Attendance.site_id == site.id,
-                Attendance.date == current_day,
-                Attendance.morning_shift_flag.is_(True)
-            )
-            .scalar()
-        ) or 0
-
-
-
-        day_shift = (
-            db.session.query(func.count())
-            .filter(
-                Attendance.site_id == site.id,
-                Attendance.date == current_day,
-                Attendance.day_shift_flag.is_(True)
-            )
-            .scalar()
-        ) or 0
-
-        night_shift = (
-            db.session.query(func.count())
-            .filter(
-                Attendance.site_id == site.id,
-                Attendance.date == current_day,
-                Attendance.night_shift_flag.is_(True)
-            )
-            .scalar()
-        ) or 0
-
-        total_shifts = morning_shift + day_shift + night_shift
-
+    daily_stats = []
+    current_day = start_date
+    while current_day < end_date:
+        day_data = stats_map.get(current_day, {
+            "present": 0,
+            "morning": 0.0,
+            "day": 0.0,
+            "night": 0.0,
+            "total_shifts": 0.0,
+        })
         daily_stats.append({
             "date": current_day,
-            "present": present,
-            "total_shifts": total_shifts,
-            "morning": morning_shift,
-            "day": day_shift,
-            "night": night_shift
+            **day_data
         })
-
         current_day += timedelta(days=1)
 
     return render_template(

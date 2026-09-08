@@ -1,0 +1,9 @@
+{
+  "venvPath": "/Library/Frameworks/Python.framework/Versions/3.14",
+  "extraPaths": [
+    "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages",
+    "."
+  ],
+  "reportCallIssue": "none",
+  "reportOptionalMemberAccess": "none"
+}

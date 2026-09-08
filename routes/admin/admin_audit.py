@@ -21,7 +21,7 @@ def admin_audit_logs():
     role = request.args.get('role')
     site_id = request.args.get('site_id')
 
-    query = AuditLog.query
+    query = AuditLog.query.filter(AuditLog.company_id == current_user.company_id)
 
     if role:
         query = query.filter(AuditLog.role == role)
@@ -51,7 +51,7 @@ def archive_audit_now():
     if current_user.role != 'admin':
         return redirect(url_for('auth.login'))
 
-    count = archive_audit_logs_keep_last_3_months()
+    count = archive_audit_logs_keep_last_3_months(company_id=current_user.company_id)
 
 
     flash(f'{count} audit logs archived successfully.', 'success')

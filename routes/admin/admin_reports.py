@@ -34,6 +34,11 @@ def monthly_report():
     grand_total = Decimal('0.00')
     
 
+    if site_id:
+        valid_site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+        if not valid_site:
+            site_id = None
+
     if site_id and month:
         start_date = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
@@ -43,17 +48,9 @@ def monthly_report():
             db.session.query(
                 Attendance.labour_id.label('labour_id'),
 
-                func.sum(
-                    case((Attendance.morning_shift_flag == 1, 1), else_=0)
-                ).label('morning_shift'),
-
-                func.sum(
-                    case((Attendance.day_shift_flag == 1, 1), else_=0)
-                ).label('day_shift'),
-
-                func.sum(
-                    case((Attendance.night_shift_flag == 1, 1), else_=0)
-                ).label('night_shift'),
+                func.sum(Attendance.morning_shift_flag).label('morning_shift'),
+                func.sum(Attendance.day_shift_flag).label('day_shift'),
+                func.sum(Attendance.night_shift_flag).label('night_shift'),
             )
             .filter(
                 Attendance.site_id == site_id,
@@ -129,9 +126,9 @@ def monthly_report():
 
 
         for r in data:
-            morning = int(r.morning_shift or 0)
-            day = int(r.day_shift or 0)
-            night = int(r.night_shift or 0)
+            morning = float(r.morning_shift or 0)
+            day = float(r.day_shift or 0)
+            night = float(r.night_shift or 0)
 
             total_shifts = morning + day + night
             wage = Decimal(r.daily_wage or 0)
@@ -249,6 +246,11 @@ def labour_salary_sheet():
     rows = []
     grand_total = Decimal('0.00')
 
+    if site_id:
+        valid_site = Site.query.filter_by(id=site_id, company_id=current_user.company_id).first()
+        if not valid_site:
+            site_id = None
+
     if site_id and month:
         start_date = datetime.strptime(month + '-01', '%Y-%m-%d').date()
         end_date = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
@@ -257,17 +259,9 @@ def labour_salary_sheet():
             db.session.query(
                 Attendance.labour_id.label('labour_id'),
 
-                func.sum(
-                    case((Attendance.morning_shift_flag == 1, 1), else_=0)
-                ).label('morning_shift'),
-
-                func.sum(
-                    case((Attendance.day_shift_flag == 1, 1), else_=0)
-                ).label('day_shift'),
-
-                func.sum(
-                    case((Attendance.night_shift_flag == 1, 1), else_=0)
-                ).label('night_shift')
+                func.sum(Attendance.morning_shift_flag).label('morning_shift'),
+                func.sum(Attendance.day_shift_flag).label('day_shift'),
+                func.sum(Attendance.night_shift_flag).label('night_shift')
             )
             .filter(
                 Attendance.site_id == site_id,
@@ -301,7 +295,7 @@ def labour_salary_sheet():
 
 
         for r in raw_rows:
-            total_shifts = int(r.morning_shift) + int(r.day_shift) + int(r.night_shift)
+            total_shifts = float(r.morning_shift or 0) + float(r.day_shift or 0) + float(r.night_shift or 0)
             total_pay = Decimal(r.daily_wage) * total_shifts
 
             rows.append({

@@ -1,11 +1,11 @@
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
+from werkzeug.security import generate_password_hash
+from sqlalchemy.exc import IntegrityError
 from . import admin_bp
 from .utils import _admin_required, _to_int
-
 from models import User, Site
 from extensions import db
-from .utils import _admin_required, _to_int
 
 
 @admin_bp.route('/managers')
@@ -24,7 +24,6 @@ def admin_add_manager():
         return redirect(url_for('auth.login'))
     if request.method == 'POST':
         username = request.form.get('username')
-        from werkzeug.security import generate_password_hash
         pwd = generate_password_hash(request.form.get('password') or 'manager123')
         site_id = _to_int(request.form.get('site_id'))
         
@@ -73,7 +72,6 @@ def admin_edit_manager(manager_id):
     ).all()
 
     if request.method == 'POST':
-        from werkzeug.security import generate_password_hash
         manager.username = request.form.get('username')
         
         site_id = request.form.get('site_id')
@@ -115,8 +113,25 @@ def delete_manager(manager_id):
         return redirect(url_for('auth.login'))
 
     manager = User.query.filter_by(id=manager_id, role='manager', company_id=current_user.company_id).first_or_404()
-    db.session.delete(manager)
-    db.session.commit()
 
-    flash('Manager deleted successfully', 'success')
+    from models import Payment, LabourMonthlyExpenses
+    from sqlalchemy.exc import IntegrityError
+
+    has_payments = Payment.query.filter_by(created_by_id=manager.id).first()
+    has_expenses = LabourMonthlyExpenses.query.filter_by(entered_by=manager.id).first()
+
+    if has_payments or has_expenses:
+        flash(f"Cannot delete manager '{manager.username}' because financial or expense records are linked to this account. Unassign their site instead.", "danger")
+        return redirect(url_for('admin_bp.admin_managers'))
+
+    try:
+        manager.site_id = None
+        db.session.delete(manager)
+        db.session.commit()
+        flash('Manager deleted successfully', 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash('Unable to delete manager due to system constraints. Unassign their site instead.', 'danger')
+
     return redirect(url_for('admin_bp.admin_managers'))
+

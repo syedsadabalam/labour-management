@@ -1,14 +1,12 @@
-from flask_login import login_required, current_user
-from . import admin_bp
-from services.payment_service import update_admin_payment
-from .utils import _admin_required, _to_int
-from models import Payment, Labour, Site
-from extensions import db
-from services.payment_service import get_admin_payments
-from sqlalchemy import func
-from flask import render_template, redirect, url_for, request
 from datetime import datetime, timedelta, date
 from flask import render_template, redirect, url_for, request, flash
+from flask_login import login_required, current_user
+from sqlalchemy import func
+from extensions import db
+from models import Payment, Labour, Site
+from . import admin_bp
+from .utils import _admin_required, _to_int
+from services.payment_service import get_admin_payments, update_admin_payment
 
 @admin_bp.route('/payments')
 @login_required
@@ -56,13 +54,17 @@ def admin_add_payment():
         is_active=True
     ).all()
 
-    # --- UI helper only ---
-    labour_advances = {}
-    for l in labours:
-        total_adv = db.session.query(
+    # --- UI helper only: single grouped query instead of N+1 loop ---
+    advances_rows = (
+        db.session.query(
+            Payment.labour_id,
             func.coalesce(func.sum(Payment.advance), 0.0)
-        ).filter(Payment.labour_id == l.id).scalar()
-        labour_advances[l.id] = float(total_adv or 0.0)
+        )
+        .filter(Payment.company_id == current_user.company_id)
+        .group_by(Payment.labour_id)
+        .all()
+    )
+    labour_advances = {row[0]: float(row[1] or 0.0) for row in advances_rows}
 
     if request.method == 'POST':
         try:

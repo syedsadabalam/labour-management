@@ -303,6 +303,7 @@
                                         onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.morning_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.morning_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                        <option value="half" {% if record_exists and a.morning_shift_flag == 0.5 %}selected{% endif %}>Half Day</option>
                                     </select>
                                 </td>
 
@@ -312,6 +313,7 @@
                                         {% if not site_shift_rules.day %}disabled{% endif %} onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.day_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.day_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                        <option value="half" {% if record_exists and a.day_shift_flag == 0.5 %}selected{% endif %}>Half Day</option>
                                     </select>
                                 </td>
 
@@ -322,6 +324,7 @@
                                         onchange="updateColor(this); updateCounts();">
                                         <option value="absent" {% if not record_exists or a.night_shift_flag == 0 %}selected{% endif %}>Absent</option>
                                         <option value="present" {% if record_exists and a.night_shift_flag == 1 %}selected{% endif %}>Present</option>
+                                        <option value="half" {% if record_exists and a.night_shift_flag == 0.5 %}selected{% endif %}>Half Day</option>
                                     </select>
                                 </td>
                             </tr>

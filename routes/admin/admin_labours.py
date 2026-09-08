@@ -1,14 +1,15 @@
-from flask import render_template, request, redirect, url_for, flash, current_app
+from flask import render_template, request, redirect, url_for, flash, current_app, jsonify, send_from_directory
 from flask_login import login_required, current_user
 from extensions import db
 from models import Site, Labour, Attendance, Payment, LabourMonthlyExpenses
 from services.audit_service import log_audit
 from . import admin_bp
 from .utils import _admin_required, _to_int
+import os
 import re
+import shutil
+from sqlalchemy.exc import IntegrityError
 from routes.admin.utils import save_and_compress_image
-
-
 from services.labour_service import get_admin_labours
 
 @admin_bp.route('/labours')
@@ -142,6 +143,9 @@ def admin_add_labour():
             # rollback fully (NO orphan labour)
             db.session.delete(labour)
             db.session.commit()
+            upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'labours', str(labour.id))
+            if os.path.exists(upload_dir):
+                shutil.rmtree(upload_dir, ignore_errors=True)
             flash(str(e), 'danger')
             return redirect(url_for('admin_bp.admin_add_labour'))
 
@@ -345,6 +349,9 @@ def delete_labour(labour_id):
     try:
         db.session.delete(labour)
         db.session.commit()
+        upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'labours', str(labour_id))
+        if os.path.exists(upload_dir):
+            shutil.rmtree(upload_dir, ignore_errors=True)
     except Exception:
         db.session.rollback()
         flash(
@@ -375,7 +382,6 @@ def delete_labour(labour_id):
 
     
 #------------LABOUR SUMMAY MODAL-------------
-from flask import jsonify
 from services.labour_summary_service import build_monthly_summary
 
 @admin_bp.route('/api/labour/<int:labour_id>/monthly-summary')
@@ -412,12 +418,19 @@ def labour_monthly_summary(labour_id):
 
 
 
-from flask import send_from_directory, current_app
-import os
 
 @admin_bp.route('/uploads/<path:filename>')
 @login_required
 def uploaded_file(filename):
+    parts = filename.split('/')
+    if len(parts) >= 2 and parts[0] == 'labours':
+        try:
+            labour_id = int(parts[1])
+            labour = Labour.query.get(labour_id)
+            if not labour or labour.company_id != current_user.company_id:
+                return "Unauthorized", 403
+        except ValueError:
+            pass
     upload_dir = os.path.join(current_app.root_path, 'static', 'uploads')
     return send_from_directory(upload_dir, filename)
 

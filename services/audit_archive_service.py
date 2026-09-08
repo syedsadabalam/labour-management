@@ -3,14 +3,16 @@ from dateutil.relativedelta import relativedelta
 from extensions import db
 from models import AuditLog, AuditLogArchive
 
-def archive_audit_logs_keep_last_3_months():
+def archive_audit_logs_keep_last_3_months(company_id=None):
     now = datetime.utcnow()
     first_day_current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     cutoff = first_day_current_month - relativedelta(months=2)
 
-    old_logs = AuditLog.query.filter(
-        AuditLog.created_at < cutoff
-    ).all()
+    query = AuditLog.query.filter(AuditLog.created_at < cutoff)
+    if company_id:
+        query = query.filter(AuditLog.company_id == company_id)
+
+    old_logs = query.all()
 
     if not old_logs:
         return 0
