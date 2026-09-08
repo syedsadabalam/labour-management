@@ -170,7 +170,7 @@ ul { list-style: none; padding: 0; margin: 0; }
   min-width: 0; /* Prevent flex overflow */
 }
 
-/* --- 6. TOP HEADER --- */
+/* --- 6. TOP HEADER (STICKY LEVEL 1) --- */
 .app-header {
   height: 70px;
   background: var(--bg-surface);
@@ -179,9 +179,20 @@ ul { list-style: none; padding: 0; margin: 0; }
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
-  z-index: 900;
+  z-index: 1030;
+}
+
+/* --- 6b. SUB-NAV (STICKY LEVEL 2 - DIRECTLY UNDER APP-HEADER) --- */
+.admin-nav, .manager-nav {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 70px !important;
+  z-index: 1020 !important;
+  background: var(--bg-surface, #ffffff) !important;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
 .page-title {
@@ -228,7 +239,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 /* --- 7. CONTENT BODY --- */
 .content-body {
-  padding: 32px;
+  padding: 0;
   flex-grow: 1;
 }
 
@@ -317,6 +328,6 @@ ul { list-style: none; padding: 0; margin: 0; }
   }
   
   .content-body {
-    padding: 16px;
+    padding: 0;
   }
 }

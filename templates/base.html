@@ -148,9 +148,9 @@
     <div class="content-body">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="mb-4">
+          <div class="px-4 pt-3 mb-2">
             {% for category, msg in messages %}
-              <div class="alert alert-custom alert-{{ 'success' if category in ['success','ok'] else 'danger' }} alert-dismissible fade show" role="alert">
+              <div class="alert alert-custom alert-{{ 'success' if category in ['success','ok'] else 'danger' }} alert-dismissible fade show mb-2" role="alert">
                 <i class="fa-solid {{ 'fa-circle-check' if category in ['success','ok'] else 'fa-circle-exclamation' }} me-2"></i>
                 {{ msg }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
